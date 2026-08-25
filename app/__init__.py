@@ -1,7 +1,6 @@
 import os
 import importlib
 from flask import Flask
-from flask_session import Session
 from supabase import create_client, Client
 from app.config import Config
 
