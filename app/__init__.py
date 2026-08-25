@@ -10,6 +10,7 @@ supabase = create_client(Config.DB_URL, Config.DB_KEY)
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    app.config['SECRET_KEY'] = Config.SECRET_KEY
     app.config.update(
         SESSION_COOKIE_SECURE=True,
         SESSION_COOKIE_HTTPONLY=True,
