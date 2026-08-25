@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}Kategori{% endblock %}
+{% block content %}
+<div>
+    <div>
+        <button>
+            <a href="{{ url_for('kategori.kategori', tab='pengeluaran') }}">Pengeluaran</a>
+        </button>
+        <button>
+            <a href="{{ url_for('kategori.kategori', tab='pemasukan') }}">Pemasukan</a>
+        </button>
+    </div>
+    <br>
+
+    {% if tab_aktif == 'pengeluaran' %}
+    <form action="{{ url_for('kategori.simpan_pengeluaran') }}" method="POST">
+        <label>Data Pengeluaran Baru:</label><br>
+        <input type="date" name="input_tanggal" required><br>
+        <select name="input_kategori_pengeluaran" required>
+            <option value="">Pilih jenis pengeluaran</option>
+            {% for p in kategori %}
+                {% if p.jenis == 'Pengeluaran' %}
+                <option value="{{ p.kategori }}">{{ p.kategori }}</option>
+                {% endif %}
+            {% endfor %}
+        </select><br>
+        <select name="input_akun_tabungan" required>
+            <option value="">Pilih akun tabungan</option>
+            {% for p in akun_tabungan %}
+            <option value="{{ p.nama_akun }}">{{ p.nama_akun }}</option>
+            {%endfor%}
+        </select><br>
+        <label for="">Rp</label>
+        <input type="number" name="input_total_perubahan" required><br>
+        <button type="submit">Simpan Pengeluaran Baru</button>
+    </form><br><br>
+    <button>
+        <a href="{{ url_for('kategori.kategori', tab='tambah_kategori_pengeluaran') }}">Tambah Kategori</a>
+    </button>
+    {% endif %}
+
+    {% if tab_aktif == 'tambah_kategori_pengeluaran' %}
+        <form action="{{ url_for('kategori.tambah_kategori_pengeluaran') }}" method="POST">
+            <label>Kategori Baru:</label><input type="text" name="input_kategori_pengeluaran_baru" required>
+            <p>{{ message }}</p><br>
+            <button><a href="{{ url_for('kategori.kategori', tab='pengeluaran') }}">Batal</a></button>
+            <button type="submit">Tambah Kategori Pengeluaran</button>
+        </form>
+    {% endif %}
+
+    {% if tab_aktif == 'pemasukan' %}
+    <form action="{{ url_for('kategori.simpan_pemasukan') }}" method="POST">
+        <label>Data Pemasukan Baru:</label><br>
+        <input type="date" name="input_tanggal" required><br>
+        <select name="input_kategori_pemasukan" required>
+            <option value="">Pilih jenis pengeluaran</option>
+            {% for p in kategori %}
+                {% if p.jenis == 'Pemasukan' %}
+                <option value="{{ p.kategori }}">{{ p.kategori }}</option>
+                {% endif %}
+            {% endfor %}
+        </select><br>
+        <select name="input_akun_tabungan" required>
+            <option value="">Pilih akun tabungan</option>
+            {% for p in akun_tabungan %}
+            <option value="{{ p.nama_akun }}">{{ p.nama_akun }}</option>
+            {%endfor%}
+        </select><br>
+        <label for="">Rp</label>
+        <input type="number" name="input_total_perubahan" required><br>
+        <button type="submit">Simpan Pemasukan Baru</button>
+    </form><br><br>
+    <button>
+        <a href="{{ url_for('kategori.kategori', tab='tambah_kategori_pemasukan') }}">
+            Tambah Kategori
+        </a>
+    </button>
+    {% endif %}
+
+    {% if tab_aktif == 'tambah_kategori_pemasukan' %}
+        <form action="{{ url_for('kategori.tambah_kategori_pemasukan') }}" method="POST">
+            <label>Kategori Baru:</label><input type="text" name="input_kategori_pemasukan_baru" required>
+            <p>{{ message }}</p><br>
+            <button><a href="{{ url_for('kategori.kategori', tab='pemasukan') }}">Batal</a></button>
+            <button type="submit">Tambah Kategori Pemasukan</button>
+        </form>
+    {% endif %}
+</div>
+{% endblock %}

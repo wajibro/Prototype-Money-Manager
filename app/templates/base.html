@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        {% block title %}
+        {% endblock %}
+    </title>
+</head>
+<body>
+    <div>
+        <h3>Total Saldo</h3>
+        <p>{{ total_saldo }}</p>
+        <br>
+        <button>
+            <a href="{{ url_for('akun_tabungan.akun_tabungan') }}">Akun Tabungan</a>
+        </button>
+        <button>
+            <a href="{{ url_for('kategori.kategori', tab='pengeluaran') }}">Kategori</a>
+        </button>
+        <button>
+            <a href="{{ url_for('histori.histori') }}">Histori</a>
+        </button>
+    </div>
+    <br><br>
+    {% block content %}
+    {% endblock %}
+    <input type="hidden" id="alertMessage" value="{{ alert_message if alert_message else '' }}">
+</body>
+<script>
+    setInterval(function() {
+        fetch(window.location.href)
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const newDoc = parser.parseFromString(html, 'text/html');
+                
+                const currentTable = document.querySelector('table tbody');
+                const newTable = newDoc.querySelector('table tbody');
+                
+                if (currentTable && newTable && currentTable.innerHTML !== newTable.innerHTML) {
+                    currentTable.innerHTML = newTable.innerHTML;
+                }
+            })
+            .catch(err => console.error("Gagal sinkronisasi data:", err));
+    }, 5000);
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const message = document.getElementById('alertMessage').value;
+    const type = document.getElementById('alertType').value;
+    
+    if (message) {
+        alert(`${message}`);
+    }
+});
+</script>
+</html>

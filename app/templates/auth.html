@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selamat Datang di Prototype Ditemoney</title>
+</head>
+<body>
+    <h3>Selamat Datang di Prototype Ditemoney</h3>
+    <h4>Silahkan masukkan pin terlebih dahulu</h4>
+
+    {% if tab == 'bisa' %}
+    <form action="{{ url_for('auth.login') }}" method='POST'>
+        <label>PIN:</label>
+        <input type="number" name="input_pin" required>
+        <button type="submit">Login</button>
+    </form>
+    {% endif %}
+
+    {% if tab == 'gagal' %}
+    <p>pin yang and masukkan salah, coba lagi</p>
+    <button><a href="{{ url_for('auth.auth', tab='bisa') }}">Kembali</a></button>
+    {% endif %}
+</body>
+</html>

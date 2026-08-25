@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Kategori{% endblock %}
+{% block content %}
+<table>
+    <thead>
+        <tr>
+            <td>Total Pengeluaran</td>
+            <td>Total Pemasukan</td>
+        </tr>
+        <tr>
+            <td>Rp {{ "{:,.2f}".format(total_pengeluaran) }}</td>
+            <td>Rp {{ "{:,.2f}".format(total_pemasukan) }}</td>
+        </tr>
+    </thead>
+</table>
+<br>
+<h3>Histori Data</h3>
+<table border="1">
+    <thead>
+        <tr>
+            <td>Akun dan Kategori</td>
+            <td>Jenis</td>
+            <td>Perubahan</td>
+            <td>Total Akhir Akun</td>
+            <td>Tanggal</td>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in data_historis %}
+        <tr>
+            <td>
+                <h4>{{ p.nama_akun }}</h4>
+                <p>{{ p.kategori }}</p>
+            </td>
+            <td>
+                {{ p.jenis }}
+            </td>
+            <td>
+                Rp {{ "{:,.2f}".format(p.total_perubahan) }}
+            </td>
+            <td>
+                Rp {{ "{:,.2f}".format(p.total_akhir) }}
+            </td>
+            <td>
+                {{ p.tanggal }}
+            </td>
+            <td>
+                <form action="/hapus_histori/{{ p.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Hapus data?')">
+                    <button type="submit">Hapus</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

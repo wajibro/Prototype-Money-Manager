@@ -1,0 +1,5 @@
+.env
+preview.bat
+__pycache__/
+venv/
+vscode/

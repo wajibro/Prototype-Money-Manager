@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Kategori{% endblock %}
+{% block content %}
+<table>
+    <thead>
+        <tr>
+            <th>Nama Akun</th>
+            <th>Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+        {% for p in data_akun_tabungan %}
+            <td>
+                {{ p.nama_akun }}
+            </td>
+            <td>
+                Rp {{ "{:,.2f}".format(p.total) }}
+            </td>
+            <td>
+                <form action="/hapus_akun/{{ p.nama_akun }}" method="POST" style="display:inline;" onsubmit="return confirm('Hapus data?')">
+                    <button type="submit">Hapus</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+        {% if tab != 'tambah_akun' %}
+        <tr>
+            <td colspan="2">
+                <a href="{{ url_for('akun_tabungan.akun_tabungan', tab='tambah_akun') }}">Tambah akun tabungan</a>
+            </td>
+        </tr>
+        {% endif %}
+       
+    </tbody>
+</table>
+{% if tab == 'tambah_akun' %}
+<br>
+<form action="{{ url_for('akun_tabungan.tambah_akun', tab='') }}" method='POST'>
+    <label>Nama Akun:</label>
+    <input type="text" name="input_nama_akun" required><br>
+    <label>Jumlah Awal: Rp</label>
+    <input type="number" name="input_total" required><br>
+    <p>{{ message }}</p>
+    <button><a href="{{ url_for('akun_tabungan.akun_tabungan', tab='') }}">Batal</a></button><button type="submit">Tambah Akun</button>
+</form>
+{% endif %}
+{% endblock %}
