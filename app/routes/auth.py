@@ -19,8 +19,10 @@ def login():
     correct_pin = int(Config.CORRECT_PIN)
 
     if pin == correct_pin:
-        session['logged_in'] = True
+        session.clear()
+        session['logged_in']    = True
         session['pin_verified'] = True
+        session.permanent       = True
         return redirect(url_for('kategori.kategori'))
     else:
         return render_template('auth.html', tab="gagal")

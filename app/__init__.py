@@ -10,8 +10,12 @@ supabase = create_client(Config.DB_URL, Config.DB_KEY)
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
-    app.config['SESSION_TYPE'] = 'filesystem'
-    Session(app)
+    app.config.update(
+        SESSION_COOKIE_SECURE=True,
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE='Lax',
+        PERMANENT_SESSION_LIFETIME=86400,
+    )
 
     routes_dir = os.path.join(os.path.dirname(__file__), 'routes')
 
