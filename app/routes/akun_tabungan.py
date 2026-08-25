@@ -18,7 +18,7 @@ def akun_tabungan():
     tab = request.args.get('tab', '')
     message = request.args.get('message', '')
 
-    response = supabase.table('akun_tabungan').select('*').execute()
+    response = supabase.table('akun_tabungan').select('*').order('id', desc=False).execute()
     data_akun_tabungan = response.data
 
     return render_template('akun_tabungan.html', total_saldo=total_saldo, data_akun_tabungan=data_akun_tabungan, tab=tab, message=message)
