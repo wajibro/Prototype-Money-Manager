@@ -13,7 +13,7 @@ def create_app():
     app.config['SESSION_COOKIE_SECURE'] = True
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-    app.config['PERMANENT_SESSION_LIFETIME'] = Config.PERMANENT_SESSION_LIFETIME
+    app.config['PERMANENT_SESSION_LIFETIME'] = 84300
 
     routes_dir = os.path.join(os.path.dirname(__file__), 'routes')
 
