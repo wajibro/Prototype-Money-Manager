@@ -1,10 +1,20 @@
-from flask import Blueprint, render_template, redirect, request, url_for, flash
+from flask import Blueprint, render_template, redirect, request, url_for, session
+from functools import wraps
 from app import supabase
 from datetime import date
 
 histori_bp = Blueprint('histori', __name__)
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('logged_in'):
+            return redirect(url_for('auth.auth'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 @histori_bp.route('/histori', methods=['GET'])
+@login_required
 def histori():
     response = supabase.table('akun_tabungan').select('total').execute()
     total_saldo = 0
@@ -37,6 +47,7 @@ def histori():
     return render_template('histori.html', total_saldo=total_saldo, total_pengeluaran=total_pengeluaran, total_pemasukan=total_pemasukan, data_historis=data_historis)
 
 @histori_bp.route('/hapus_histori/<id>', methods=['GET', 'POST'])
+@login_required
 def delete(id):
     response = supabase.table('data_historis').select('*').eq('id', id).execute()
     data_lama = response.data[0]

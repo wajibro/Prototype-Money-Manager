@@ -1,10 +1,21 @@
-from flask import Blueprint, render_template, redirect, request, url_for, flash
+from flask import Blueprint, render_template, redirect, request, url_for, session
+from functools import wraps
 from app import supabase
 from datetime import date
 
 kategori_bp = Blueprint('kategori', __name__) 
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('logged_in'):
+            return redirect(url_for('auth.auth'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 @kategori_bp.route('/kategori', methods=['GET'])
+@login_required
 def kategori():
     tab_aktif = request.args.get('tab', 'pengeluaran')
     message = request.args.get('message', '')
@@ -27,6 +38,7 @@ def kategori():
     return render_template('kategori.html', total_saldo=total_saldo ,kategori=kategori, akun_tabungan=akun_tabungan, tab_aktif=tab_aktif, message=message)
 
 @kategori_bp.route('/simpan_pengeluaran', methods=['GET', 'POST'])
+@login_required
 def simpan_pengeluaran():
     input_tanggal                 = request.form.get('input_tanggal')
     input_kategori_pengeluaran    = request.form.get('input_kategori_pengeluaran')
@@ -57,6 +69,7 @@ def simpan_pengeluaran():
         return redirect(url_for('kategori.kategori'))
 
 @kategori_bp.route('/simpan_pemasukan', methods=['GET', 'POST'])
+@login_required
 def simpan_pemasukan():
     input_tanggal                 = request.form.get('input_tanggal')
     input_kategori_pemasukan      = request.form.get('input_kategori_pemasukan')
@@ -87,6 +100,7 @@ def simpan_pemasukan():
     return redirect(url_for('kategori.kategori'))
 
 @kategori_bp.route('/tambah_kategori_pengeluaran', methods=['GET', 'POST'])
+@login_required
 def tambah_kategori_pengeluaran():
     input_kategori_baru = request.form.get('input_kategori_pengeluaran_baru')
 
@@ -106,6 +120,7 @@ def tambah_kategori_pengeluaran():
         return redirect(url_for('kategori.kategori', tab='pengeluaran'))
 
 @kategori_bp.route('/tambah_kategori_pemasukan', methods=['GET', 'POST'])
+@login_required
 def tambah_kategori_pemasukan():
     input_kategori_baru = request.form.get('input_kategori_pemasukan_baru')
 

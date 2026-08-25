@@ -1,6 +1,7 @@
 import os
 import importlib
 from flask import Flask
+from flask_session import Session
 from supabase import create_client, Client
 from app.config import Config
 
@@ -9,6 +10,8 @@ supabase = create_client(Config.DB_URL, Config.DB_KEY)
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    app.config['SESSION_TYPE'] = 'filesystem'
+    Session(app)
 
     routes_dir = os.path.join(os.path.dirname(__file__), 'routes')
 

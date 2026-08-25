@@ -3,3 +3,4 @@ preview.bat
 __pycache__/
 venv/
 vscode/
+flask_session/

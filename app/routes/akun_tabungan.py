@@ -1,10 +1,20 @@
-from flask import Blueprint, render_template, redirect, request, url_for, flash
+from flask import Blueprint, render_template, redirect, request, url_for, session
+from functools import wraps
 from app import supabase
 from datetime import date
 
 akun_tabungan_bp = Blueprint('akun_tabungan', __name__)
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('logged_in'):
+            return redirect(url_for('auth.auth'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 @akun_tabungan_bp.route('/daftar_akun_tabungan', methods=['GET'])
+@login_required
 def akun_tabungan():
     response = supabase.table('akun_tabungan').select('total').execute()
     total_saldo = 0
@@ -24,6 +34,7 @@ def akun_tabungan():
     return render_template('akun_tabungan.html', total_saldo=total_saldo, data_akun_tabungan=data_akun_tabungan, tab=tab, message=message)
 
 @akun_tabungan_bp.route('/tambah_akun', methods=['GET', 'POST'])
+@login_required
 def tambah_akun():
     input_nama_akun = request.form.get('input_nama_akun')
     input_total = request.form.get('input_total')
@@ -56,6 +67,7 @@ def tambah_akun():
         return redirect(url_for('akun_tabungan.akun_tabungan', tab='', message=''))        
 
 @akun_tabungan_bp.route('/hapus_akun/<nama_akun>', methods=['POST'])
+@login_required
 def delete(nama_akun):
     supabase.table('akun_tabungan').delete().eq('nama_akun', nama_akun).execute()
     supabase.table('data_historis').delete().eq('nama_akun', nama_akun).eq('jenis', "Tambah Akun").execute()
