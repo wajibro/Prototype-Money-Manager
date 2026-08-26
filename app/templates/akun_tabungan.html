@@ -18,18 +18,51 @@
                 Rp {{ "{:,.2f}".format(p.total) }}
             </td>
             <td>
-                <form action="/hapus_akun/{{ p.nama_akun }}" method="POST" style="display:inline;" onsubmit="return confirm('Hapus data?')">
+                <a href="/transfer_akun_form/{{ p.id }}">Transfer</a>
+                <a href="/edit_akun/{{ p.id }}">Edit</a>
+                <form action="/hapus_akun/{{ p.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Hapus data?')">
                     <button type="submit">Hapus</button>
                 </form>
             </td>
         </tr>
         {% endfor %}
         {% if tab != 'tambah_akun' %}
-        <tr>
-            <td colspan="2">
-                <a href="{{ url_for('akun_tabungan.akun_tabungan', tab='tambah_akun') }}">Tambah akun tabungan</a>
-            </td>
-        </tr>
+            {% if edit_akun %}
+                <h3>Edit akun {{ edit_akun.nama_akun }}</h3>
+                <form action="{{ url_for('akun_tabungan.update', id=edit_akun.id) }}" method='POST'>
+                    <label>Nama Akun:</label>
+                    <input type="text" name="input_nama_akun_baru" value="{{ edit_akun.nama_akun }}" required><br>
+                    <label>Total: Rp</label>
+                    <input type="number" name="input_total_akun_baru" value="{{ edit_akun.total }}" required><br>
+                    <p>{{ message }}</p>
+                    <a href="{{ url_for('akun_tabungan.akun_tabungan') }}">Batal</a>
+                    <button type="submit">Edit</button>
+                </form>
+            {% elif transfer_akun %}
+                <h3>Transfer Akun</h3>
+                <form action="/transfer_akun/{{ transfer_akun.id }}" method='POST'>
+                    <p>Dari akun: {{ transfer_akun.nama_akun }}</p>
+                    <label>Kirim ke:</label>
+                    <select name="target_transfer" required>
+                        <option value="">Pilih Tujuan Transfer</option>
+                        {% for p in data_akun_tabungan %}
+                            {% if p.nama_akun != transfer_akun.nama_akun %}
+                            <option value="{{ p.nama_akun }}">{{ p.nama_akun }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select><br>
+                    <label>Sejumlah: Rp</label><input type="number" name="input_total_transfer" min="1" step="1" required><br>
+                    <a href="{{ url_for('akun_tabungan.akun_tabungan') }}">Batal</a>
+                    <button type="submit">Transfer</button>
+                    <br>
+                </form>
+            {% else %}
+            <tr>
+                <td colspan="2">
+                    <a href="{{ url_for('akun_tabungan.akun_tabungan', tab='tambah_akun') }}">Tambah akun tabungan</a>
+                </td>
+            </tr>
+            {% endif %}
         {% endif %}
        
     </tbody>
@@ -42,7 +75,8 @@
     <label>Jumlah Awal: Rp</label>
     <input type="number" name="input_total" required><br>
     <p>{{ message }}</p>
-    <button><a href="{{ url_for('akun_tabungan.akun_tabungan', tab='') }}">Batal</a></button><button type="submit">Tambah Akun</button>
+    <button><a href="{{ url_for('akun_tabungan.akun_tabungan', tab='') }}">Batal</a></button>
+    <button type="submit">Tambah Akun</button>
 </form>
 {% endif %}
 {% endblock %}

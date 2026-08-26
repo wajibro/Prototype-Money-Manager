@@ -15,7 +15,7 @@
 </table>
 <br>
 <h3>Histori Data</h3>
-<table border="1">
+<table border="1" cellpadding="5" cellspacing="0">
     <thead>
         <tr>
             <td>Akun dan Kategori</td>
@@ -29,8 +29,8 @@
         {% for p in data_historis %}
         <tr>
             <td>
-                <h4>{{ p.nama_akun }}</h4>
-                <p>{{ p.kategori }}</p>
+                <h4>{{ p.kategori }}</h4>
+                <p>{{ p.nama_akun }}</p>
             </td>
             <td>
                 {{ p.jenis }}
