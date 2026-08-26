@@ -42,7 +42,7 @@ def akun_tabungan():
         if response.data:
             transfer_akun = response.data[0]
 
-    response = supabase.table('akun_tabungan').select('*').order('id', desc=False).execute()
+    response = supabase.table('akun_tabungan').select('*').order('nama_akun', desc=False).execute()
     data_akun_tabungan = response.data
 
     return render_template('akun_tabungan.html', total_saldo=total_saldo, data_akun_tabungan=data_akun_tabungan, tab=tab, message=message, edit_akun=edit_akun, transfer_akun=transfer_akun)

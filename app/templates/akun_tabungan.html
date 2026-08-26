@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}Kategori{% endblock %}
 {% block content %}
-<table>
+<table border="1" cellpadding="5" cellspacing="0">
     <thead>
         <tr>
             <th>Nama Akun</th>
@@ -58,7 +58,7 @@
                 </form>
             {% else %}
             <tr>
-                <td colspan="2">
+                <td colspan="3">
                     <a href="{{ url_for('akun_tabungan.akun_tabungan', tab='tambah_akun') }}">Tambah akun tabungan</a>
                 </td>
             </tr>
