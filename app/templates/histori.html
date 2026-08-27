@@ -13,6 +13,63 @@
         </tr>
     </thead>
 </table>
+{% if edit_histori %}
+<form action="{{ url_for('histori.update', id=edit_histori.id) }}" method='POST'>
+    <table border="1" cellpadding="5" cellspacing="0">
+        <tbody>
+            <tr>
+                <td>Akun dan Kategori</td>
+                <td>Jenis</td>
+                <td>Sub Kategori</td>
+                <td>Perubahan</td>
+                <td>Tanggal</td>
+            </tr>
+            <tr>
+                <td>
+                    <select name="input_nama_akun_baru"  value="{{ edit_histori.nama_akun }}" required>
+                        {% for p in akun_tabungan %}
+                            {% if edit_histori.nama_akun == p.nama_akun %}
+                                <option value="{{ p.nama_akun }}" selected>{{ p.nama_akun }}</option>
+                            {% else %}
+                                <option value="{{ p.nama_akun }}"> {{ p.nama_akun }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    <br>
+                    
+                    <select name="input_kategori_baru" id="">
+                        {% for p in kategori %}
+                            {% if edit_histori.kategori == p.kategori %}
+                                <option value="{{ p.kategori }}" selected>{{ p.kategori }}</option>
+                            {% else %}
+                                <option value="{{ p.kategori }}"> {{ p.kategori }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>                    
+                </td>
+                <td>
+                    {{ edit_histori.jenis }}
+                </td>
+                <td>
+                    <input type="text" name="input_sub_kategori_baru" value="{{ edit_histori.sub_kategori }}" required>
+                </td>
+                <td>
+                    <input type="number" name="input_perubahan_baru" value="{{ edit_histori.total_perubahan }}" required>
+                </td>
+                <td>
+                    <input type="date" name="input_tanggal_baru" value="{{ edit_histori.tanggal }}" required>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="5">
+                    <a href="{{ url_for('histori.histori') }}">Batal</a>
+                    <button type="submit">Edit Histori</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</form>
+{% endif %}
 <br>
 <h3>Histori Data</h3>
 <table border="1" cellpadding="5" cellspacing="0">
@@ -20,6 +77,7 @@
         <tr>
             <td>Akun dan Kategori</td>
             <td>Jenis</td>
+            <td>Sub Kategori</td>
             <td>Perubahan</td>
             <td>Total Akhir Akun</td>
             <td>Tanggal</td>
@@ -29,11 +87,13 @@
         {% for p in data_historis %}
         <tr>
             <td>
-                <h4>{{ p.kategori }}</h4>
-                <p>{{ p.nama_akun }}</p>
+                {{ p.kategori }} <br> {{ p.nama_akun }}
             </td>
             <td>
                 {{ p.jenis }}
+            </td>
+            <td>
+                {{ p.sub_kategori }}
             </td>
             <td>
                 Rp {{ "{:,.2f}".format(p.total_perubahan) }}
@@ -45,6 +105,9 @@
                 {{ p.tanggal }}
             </td>
             <td>
+                {% if p.jenis == 'Pemasukan' or p.jenis == 'Pengeluaran' %}
+                <a href="/edit_histori/{{ p.id }}">Edit</a>
+                {% endif %}
                 <form action="/hapus_histori/{{ p.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Hapus data?')">
                     <button type="submit">Hapus</button>
                 </form>

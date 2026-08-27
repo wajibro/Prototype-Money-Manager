@@ -17,7 +17,7 @@ def login_required(f):
 @kategori_bp.route('/kategori', methods=['GET'])
 @login_required
 def kategori():
-    tab_aktif = request.args.get('tab', 'pengeluaran')
+    tab_aktif = request.args.get('tab', 'Pengeluaran')
     message = request.args.get('message', '')
 
     response = supabase.table('akun_tabungan').select('total').execute()
@@ -29,7 +29,7 @@ def kategori():
     else:
         total_saldo = "Belum ada akun tabungan yang terdaftar"
 
-    response = supabase.table('kategori').select('*').execute()
+    response = supabase.table('kategori').select('*').order('id', desc=False).execute()
     kategori = response.data
 
     response = supabase.table('akun_tabungan').select('*').execute()
@@ -41,9 +41,10 @@ def kategori():
 @login_required
 def simpan_pengeluaran():
     input_tanggal                 = request.form.get('input_tanggal')
-    input_kategori_pengeluaran    = request.form.get('input_kategori_pengeluaran')
+    input_kategori                = request.form.get('input_kategori')
     input_akun_tabungan           = request.form.get('input_akun_tabungan')
     input_total_perubahan         = request.form.get('input_total_perubahan')
+    input_sub_kategori            = request.form.get('input_sub_kategori')
 
     total_perubahan = float(input_total_perubahan)
     response = supabase.table('akun_tabungan').select('total').eq('nama_akun', input_akun_tabungan).execute()
@@ -51,13 +52,17 @@ def simpan_pengeluaran():
 
     total_akhir = total_tabungan - total_perubahan
 
-    if input_kategori_pengeluaran and input_akun_tabungan and input_total_perubahan:
+    if input_kategori and input_akun_tabungan and input_total_perubahan:
+        if input_sub_kategori == '':
+            input_sub_kategori = "-"
+
         supabase.table('data_historis')\
         .insert({
             "tanggal"           : input_tanggal,
             "nama_akun"         : input_akun_tabungan,
             "jenis"             : "Pengeluaran",
-            "kategori"          : input_kategori_pengeluaran,
+            "kategori"          : input_kategori,
+            "sub_kategori"      : input_sub_kategori,
             "total_perubahan"   : -total_perubahan,
             "total_akhir"       : total_akhir
         }).execute()
@@ -66,15 +71,16 @@ def simpan_pengeluaran():
             "total": total_akhir
         }).eq('nama_akun', input_akun_tabungan).execute()
 
-        return redirect(url_for('kategori.kategori'))
+        return redirect(url_for('kategori.kategori', tab='pengeluaran'))
 
 @kategori_bp.route('/simpan_pemasukan', methods=['GET', 'POST'])
 @login_required
 def simpan_pemasukan():
     input_tanggal                 = request.form.get('input_tanggal')
-    input_kategori_pemasukan      = request.form.get('input_kategori_pemasukan')
+    input_kategori                = request.form.get('input_kategori')
     input_akun_tabungan           = request.form.get('input_akun_tabungan')
     input_total_perubahan         = request.form.get('input_total_perubahan')
+    input_sub_kategori            = request.form.get('input_sub_kategori')
 
     total_perubahan = float(input_total_perubahan)
     response = supabase.table('akun_tabungan').select('total').eq('nama_akun', input_akun_tabungan).execute()
@@ -82,13 +88,17 @@ def simpan_pemasukan():
 
     total_akhir = total_tabungan + total_perubahan
 
-    if input_kategori_pemasukan and input_akun_tabungan and input_total_perubahan:
+    if input_kategori and input_akun_tabungan and input_total_perubahan:
+        if input_sub_kategori == '':
+            input_sub_kategori = '-'
+
         supabase.table('data_historis')\
         .insert({
             "tanggal"           : input_tanggal,
             "nama_akun"         : input_akun_tabungan,
             "jenis"             : "Pemasukan",
-            "kategori"          : input_kategori_pemasukan,
+            "kategori"          : input_kategori,
+            "sub_kategori"      : input_sub_kategori,
             "total_perubahan"   : total_perubahan,
             "total_akhir"       : total_akhir
         }).execute()
@@ -97,7 +107,7 @@ def simpan_pemasukan():
             "total": total_akhir
         }).eq('nama_akun', input_akun_tabungan).execute()
 
-    return redirect(url_for('kategori.kategori'))
+    return redirect(url_for('kategori.kategori', tab='pemasukan'))
 
 @kategori_bp.route('/tambah_kategori_pengeluaran', methods=['GET', 'POST'])
 @login_required

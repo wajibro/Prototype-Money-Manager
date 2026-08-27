@@ -74,7 +74,7 @@ def tambah_akun():
 def edit_form(id):
     return redirect(url_for('akun_tabungan.akun_tabungan', edit_akun_id=id))
 
-@akun_tabungan_bp.route('/update/<id>', methods=['POST'])
+@akun_tabungan_bp.route('/update_akun/<id>', methods=['POST'])
 @login_required
 def update(id):
     input_nama_akun_baru = request.form.get('input_nama_akun_baru')
@@ -141,7 +141,7 @@ def delete(id):
     data = response.data[0]
     nama_akun = data['nama_akun']
 
-    supabase.table('data_historis').delete().eq('nama_akun', nama_akun).eq('jenis', "Tambah Akun").execute()
+    supabase.table('data_historis').delete().eq('nama_akun', nama_akun).execute()
     supabase.table('akun_tabungan').delete().eq('id', id).execute()
 
     return redirect(url_for('akun_tabungan.akun_tabungan', tab='', message=''))
