@@ -39,10 +39,39 @@ def grafik_ke_base64():
 @analisis_bp.route('/analisis')
 @login_required
 def analisis():
+    response_all = supabase.table('data_historis').select('*').execute()
+    data_all = response_all.data
+    data_sorted = sorted(data_all, key=lambda x: x['tanggal'])
+
+    akun_tren = {}
+    for p in data_sorted:
+        nama_akun = p['nama_akun']
+        if nama_akun not in akun_tren:
+            akun_tren[nama_akun] = {'tanggal': [], 'total': []}
+        akun_tren[nama_akun]['tanggal'].append(p['tanggal'])
+        akun_tren[nama_akun]['total'].append(p['total_akhir'])
+
+    plt.figure(figsize=(10, 5))
+
+    for nama_akun, tren in akun_tren.items():
+        gaya = GAYA_GARIS_AKUN.get(nama_akun, {'marker': 'o'})
+        plt.plot(tren['tanggal'], tren['total'], label=nama_akun, linewidth=2.5, **gaya)
+        plt.text(tren['tanggal'][-1], tren['total'][-1], f" Rp {tren['total'][-1]:,}", va='center', fontweight='bold', fontsize=9)
+
+    ax3 = plt.gca()
+    ax3.yaxis.set_major_locator(ticker.MultipleLocator(1000000))
+    ax3.yaxis.set_major_formatter(FORMATTER_RUPIAH)
+    plt.title('Tren Saldo Akhir Berdasarkan Akun', fontsize=12, fontweight='bold', pad=15)
+    plt.xlabel('Tanggal Transaksi', fontsize=10)
+    plt.legend(title="Daftar Akun", loc='upper left', frameon=True, shadow=True)
+    plt.grid(True, linestyle='--', alpha=0.5)
+    plt.xticks(rotation=15)
+    plt.tight_layout()
+    chart_garis = grafik_ke_base64()
+
     response = supabase.table('data_historis').select('*').eq('jenis', 'Pengeluaran').execute()
     data = response.data
 
-    daftar_kategori = set()
     daftar_kategori_masuk = sorted(list(set(p['kategori'] for p in data)))
     
     kategori_total = {kat: 0 for kat in daftar_kategori_masuk}
@@ -61,7 +90,7 @@ def analisis():
         sub_kat = p['sub_kategori']
         sub_kategori_data[kat][sub_kat] = sub_kategori_data[kat].get(sub_kat, 0) + nominal
 
-    plt.figure(figsize=(14/len(kategori_total), 9/len(kategori_total)))
+    plt.figure(figsize=(10, 6))
     kategori_nama = list(kategori_total.keys())
     nominal_kategori = list(kategori_total.values())
     bars = plt.bar(kategori_nama, nominal_kategori, color=['#ff6b6b']*3, edgecolor='black')
@@ -77,8 +106,11 @@ def analisis():
     plt.tight_layout()
     chart_batang_pengeluaran = grafik_ke_base64()
 
-    fig, axes = plt.subplots(3, 1, figsize=(15, 30))
     kategori_list = daftar_kategori_masuk
+    fig, axes = plt.subplots(len(kategori_list), 1, figsize=(12, 5*len(kategori_list)))
+
+    if len(kategori_list) == 1:
+        axes = [axes]
 
     for i, kat in enumerate(kategori_list):
         sub_data = sub_kategori_data.get(kat, {})
@@ -99,36 +131,6 @@ def analisis():
     plt.suptitle('Rincian Sub-Kategori Pengeluaran Dompet', fontsize=14, fontweight='bold', y=1.02)
     plt.tight_layout()
     chart_pie_pengeluaran = grafik_ke_base64()
-
-    response_all = supabase.table('data_historis').select('*').execute()
-    data_all = response_all.data
-    data_sorted = sorted(data_all, key=lambda x: x['tanggal'])
-
-    akun_tren = {}
-    for p in data_sorted:
-        nama_akun = p['nama_akun']
-        if nama_akun not in akun_tren:
-            akun_tren[nama_akun] = {'tanggal': [], 'total': []}
-        akun_tren[nama_akun]['tanggal'].append(p['tanggal'])
-        akun_tren[nama_akun]['total'].append(p['total_akhir'])
-
-    plt.figure(figsize=(12, 5))
-
-    for nama_akun, tren in akun_tren.items():
-        gaya = GAYA_GARIS_AKUN.get(nama_akun, {'marker': 'o'})
-        plt.plot(tren['tanggal'], tren['total'], label=nama_akun, linewidth=2.5, **gaya)
-        plt.text(tren['tanggal'][-1], tren['total'][-1], f" Rp {tren['total'][-1]:,}", va='center', fontweight='bold', fontsize=9)
-
-    ax3 = plt.gca()
-    ax3.yaxis.set_major_locator(ticker.MultipleLocator(1000000))
-    ax3.yaxis.set_major_formatter(FORMATTER_RUPIAH)
-    plt.title('Tren Saldo Akhir Berdasarkan Akun', fontsize=12, fontweight='bold', pad=15)
-    plt.xlabel('Tanggal Transaksi', fontsize=10)
-    plt.legend(title="Daftar Akun", loc='upper left', frameon=True, shadow=True)
-    plt.grid(True, linestyle='--', alpha=0.5)
-    plt.xticks(rotation=15)
-    plt.tight_layout()
-    chart_garis = grafik_ke_base64()
 
     response = supabase.table('data_historis').select('*').eq('jenis', 'Pemasukan').execute()
     data = response.data
@@ -167,9 +169,12 @@ def analisis():
     plt.tight_layout()
     chart_batang_pemasukan = grafik_ke_base64()
 
-    fig, axes = plt.subplots(3, 1, figsize=(15, 30))
     kategori_list = daftar_kategori_masuk
+    fig, axes = plt.subplots(len(kategori_list), 1, figsize=(12, 5*len(kategori_list)))
 
+    if len(kategori_list) == 1:
+        axes = [axes]
+    
     for i, kat in enumerate(kategori_list):
         sub_data = sub_kategori_data.get(kat, {})
         ax = axes[i]
