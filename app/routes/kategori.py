@@ -17,7 +17,7 @@ def login_required(f):
 @kategori_bp.route('/kategori', methods=['GET'])
 @login_required
 def kategori():
-    tab_aktif = request.args.get('tab', 'Pengeluaran')
+    tab_aktif = request.args.get('tab', 'pengeluaran')
     message = request.args.get('message', '')
 
     response = supabase.table('akun_tabungan').select('total').execute()

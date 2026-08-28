@@ -111,23 +111,22 @@ def transfer(id):
     response = supabase.table('akun_tabungan').select('*').eq('id', id).execute()
     data_sumber = response.data[0]
     total_sumber = float(data_sumber['total'])
-    total_sumber -= total_transfer
+    sumber_akhir = total_sumber - total_transfer
 
     response = supabase.table('akun_tabungan').select('*').eq('nama_akun', target_transfer).execute()
     data_target = response.data[0]
     total_target = float(data_target['total'])
-    total_target += total_transfer
+    target_akhir = total_target + total_transfer
 
     supabase.table('akun_tabungan')\
-        .upsert({
-            'id': id,
-            'total': total_sumber
-        }).execute()
+        .update({
+            'nama_akun': data_sumber['nama_akun'],
+            'total': sumber_akhir
+        }).eq('id', id).execute()
     supabase.table('akun_tabungan')\
-        .upsert({
-            'nama_akun': target_transfer,
-            'total': total_sumber
-        }).execute()
+        .update({
+            'total': target_akhir
+        }).eq('nama_akun', target_transfer).execute()
 
     session.pop('transfer_akun_data', None)
     session.pop('transfer_akun_id', None)

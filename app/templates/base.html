@@ -24,7 +24,7 @@
             <a href="{{ url_for('histori.histori') }}">Histori</a>
         </button>
     </div>
-    <br><br>
+    <br>
     {% block content %}
     {% endblock %}
     <input type="hidden" id="alertMessage" value="{{ alert_message if alert_message else '' }}">

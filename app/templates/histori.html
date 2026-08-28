@@ -16,14 +16,16 @@
 {% if edit_histori %}
 <form action="{{ url_for('histori.update', id=edit_histori.id) }}" method='POST'>
     <table border="1" cellpadding="5" cellspacing="0">
-        <tbody>
+        <thead>
             <tr>
-                <td>Akun dan Kategori</td>
-                <td>Jenis</td>
-                <td>Sub Kategori</td>
-                <td>Perubahan</td>
-                <td>Tanggal</td>
+                <th>Akun dan Kategori</th>
+                <th>Jenis</th>
+                <th>Sub Kategori</th>
+                <th>Perubahan</th>
+                <th>Tanggal</th>
             </tr>
+        </thead>
+        <tbody>
             <tr>
                 <td>
                     <select name="input_nama_akun_baru"  value="{{ edit_histori.nama_akun }}" required>
@@ -75,12 +77,12 @@
 <table border="1" cellpadding="5" cellspacing="0">
     <thead>
         <tr>
-            <td>Akun dan Kategori</td>
-            <td>Jenis</td>
-            <td>Sub Kategori</td>
-            <td>Perubahan</td>
-            <td>Total Akhir Akun</td>
-            <td>Tanggal</td>
+            <th>Akun dan Kategori</th>
+            <th>Jenis</th>
+            <th>Sub Kategori</th>
+            <th>Perubahan</th>
+            <th>Total Akhir Akun</th>
+            <th>Tanggal</th>
         </tr>
     </thead>
     <tbody>
