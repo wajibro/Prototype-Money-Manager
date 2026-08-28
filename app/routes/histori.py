@@ -94,16 +94,16 @@ def update(id):
             total_akhir = total_lama - perubahan_lama + perubahan_baru
         else:
             total_akhir = total_lama
+
         supabase.table('data_historis')\
-                .upsert({
-                    'id': id,
-                    'nama_akun': input_nama_akun_baru,
-                    'kategori': input_kategori_baru,
-                    'sub_kategori': input_sub_kategori_baru,
-                    'total_perubahan': perubahan_baru,
-                    'total_akhir': total_akhir,
-                    'tanggal': input_tanggal_baru
-                }).execute()
+            .update({
+                'nama_akun': input_nama_akun_baru,
+                'kategori': input_kategori_baru,
+                'sub_kategori': input_sub_kategori_baru,
+                'total_perubahan': perubahan_baru,
+                'total_akhir': total_akhir,
+                'tanggal': input_tanggal_baru
+            }).eq('id', id).execute()
         supabase.table('akun_tabungan')\
             .update({
                 'total': total_akhir
@@ -114,28 +114,25 @@ def update(id):
         total_akun_baru = data_baru['total']
 
         total_akhir_lama = total_lama - perubahan_lama
-        total_akhir_baru = total_lama + perubahan_baru
+        total_akhir_baru = total_akun_baru + perubahan_baru
 
         supabase.table('data_historis')\
-                .upsert({
-                    'id': id,
+                .update({
                     'nama_akun': input_nama_akun_baru,
                     'kategori': input_kategori_baru,
                     'sub_kategori': input_sub_kategori_baru,
                     'total_perubahan': perubahan_baru,
                     'total_akhir': total_akhir_baru,
                     'tanggal': input_tanggal_baru
-                }).execute()
+                }).eq('id', id).execute()
         supabase.table('akun_tabungan')\
-            .upsert({
-                'nama_akun': akun_lama,
+            .update({
                 'total': total_akhir_lama
-            }).execute()
+            }).eq('nama_akun', akun_lama).execute()
         supabase.table('akun_tabungan')\
-            .upsert({
-                'nama_akun': input_nama_akun_baru,
+            .update({
                 'total': total_akhir_baru
-            }).execute()
+            }).eq('nama_akun', input_nama_akun_baru).execute()
 
     session.pop('edit_histori_data', None)
     session.pop('edit_histori_id', None)
