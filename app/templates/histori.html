@@ -104,7 +104,7 @@
                 Rp {{ "{:,.2f}".format(p.total_akhir) }}
             </td>
             <td>
-                {{ p.tanggal }}
+                {{ p.tanggal | format_tanggal }}
             </td>
             <td>
                 {% if p.jenis == 'Pemasukan' or p.jenis == 'Pengeluaran' %}

@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, request, url_for, session
 from functools import wraps
 from app import supabase
-from datetime import date
+from datetime import date, datetime
 
 histori_bp = Blueprint('histori', __name__)
 
@@ -12,6 +12,13 @@ def login_required(f):
             return redirect(url_for('auth.auth'))
         return f(*args, **kwargs)
     return decorated_function
+
+@histori_bp.app_template_filter('format_tanggal')
+def format_tgl_en_filter(date_str):
+    if not date_str:
+        return ""
+    
+    return datetime.strptime(date_str, '%Y-%m-%d').strftime('%d, %b %Y')
 
 @histori_bp.route('/histori', methods=['GET'])
 @login_required
