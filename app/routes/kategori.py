@@ -29,13 +29,39 @@ def kategori():
     else:
         total_saldo = "Belum ada akun tabungan yang terdaftar"
 
+    response = supabase.table('data_historis').select('total_perubahan').eq('jenis', 'Pengeluaran').execute()
+    total_pengeluaran = 0
+    if response.data:
+        for akun in response.data:
+            total_pengeluaran += float(akun['total_perubahan'])
+        total_pengeluaran = f"Rp {total_pengeluaran:,.2f}"
+    else:
+        total_pengeluaran = 0
+
+    response = supabase.table('data_historis').select('total_perubahan').eq('jenis', 'Pemasukan').execute()
+    total_pemasukan = 0
+    if response.data:
+        for akun in response.data:
+            total_pemasukan += float(akun['total_perubahan'])
+        total_pemasukan = f"Rp {total_pemasukan:,.2f}"
+    else:
+        total_pemasukan = 0
+
     response = supabase.table('kategori').select('*').order('id', desc=False).execute()
     kategori = response.data
 
     response = supabase.table('akun_tabungan').select('*').execute()
     akun_tabungan = response.data
 
-    return render_template('kategori.html', total_saldo=total_saldo ,kategori=kategori, akun_tabungan=akun_tabungan, tab_aktif=tab_aktif, message=message)
+    return render_template(
+        'kategori.html',
+        total_saldo         = total_saldo,
+        total_pengeluaran   = total_pengeluaran,
+        total_pemasukan     = total_pemasukan,
+        kategori            = kategori,
+        akun_tabungan       = akun_tabungan,
+        tab_aktif           = tab_aktif, message=message
+    )
 
 @kategori_bp.route('/simpan_pengeluaran', methods=['GET', 'POST'])
 @login_required

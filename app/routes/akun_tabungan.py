@@ -25,6 +25,24 @@ def akun_tabungan():
     else:
         total_saldo = "Belum ada akun tabungan yang terdaftar"
 
+    response = supabase.table('data_historis').select('total_perubahan').eq('jenis', 'Pengeluaran').execute()
+    total_pengeluaran = 0
+    if response.data:
+        for akun in response.data:
+            total_pengeluaran += float(akun['total_perubahan'])
+        total_pengeluaran = f"Rp {total_pengeluaran:,.2f}"
+    else:
+        total_pengeluaran = 0
+
+    response = supabase.table('data_historis').select('total_perubahan').eq('jenis', 'Pemasukan').execute()
+    total_pemasukan = 0
+    if response.data:
+        for akun in response.data:
+            total_pemasukan += float(akun['total_perubahan'])
+        total_pemasukan = f"Rp {total_pemasukan:,.2f}"
+    else:
+        total_pemasukan = 0
+
     tab = request.args.get('tab', '')
     message = request.args.get('message', '')
 
@@ -45,7 +63,17 @@ def akun_tabungan():
     response = supabase.table('akun_tabungan').select('*').order('nama_akun', desc=False).execute()
     data_akun_tabungan = response.data
 
-    return render_template('akun_tabungan.html', total_saldo=total_saldo, data_akun_tabungan=data_akun_tabungan, tab=tab, message=message, edit_akun=edit_akun, transfer_akun=transfer_akun)
+    return render_template(
+        'akun_tabungan.html',
+        total_saldo         = total_saldo,
+        total_pengeluaran   = total_pengeluaran,
+        total_pemasukan     = total_pemasukan,
+        data_akun_tabungan  = data_akun_tabungan,
+        tab                 = tab,
+        message             = message,
+        edit_akun           = edit_akun,
+        transfer_akun       = transfer_akun
+    )
 
 @akun_tabungan_bp.route('/tambah_akun', methods=['GET', 'POST'])
 @login_required

@@ -1,18 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}Kategori{% endblock %}
 {% block content %}
-<table>
-    <thead>
-        <tr>
-            <td>Total Pengeluaran</td>
-            <td>Total Pemasukan</td>
-        </tr>
-        <tr>
-            <td>Rp {{ "{:,.2f}".format(total_pengeluaran) }}</td>
-            <td>Rp {{ "{:,.2f}".format(total_pemasukan) }}</td>
-        </tr>
-    </thead>
-</table>
 {% if edit_histori %}
 <form action="{{ url_for('histori.update', id=edit_histori.id) }}" method='POST'>
     <table border="1" cellpadding="5" cellspacing="0">

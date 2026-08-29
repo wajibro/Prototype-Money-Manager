@@ -11,8 +11,22 @@
 </head>
 <body>
     <div>
-        <h3>Total Saldo</h3>
-        <p>{{ total_saldo }}</p>
+        <br>
+        <table border="1" cellpadding="5" cellspacing="0">
+            <body>
+                <tr>
+                    <td colspan="2">Total Saldo: {{ total_saldo }}</td>
+                </tr>
+                <tr>
+                    <td>Total Pengeluaran</td>
+                    <td>Total Pemasukan</td>
+                </tr>
+                <tr>
+                    <td>{{ total_pengeluaran }}</td>
+                    <td>{{ total_pemasukan }}</td>
+                </tr>
+            </thead>
+        </table>
         <br>
         <button>
             <a href="{{ url_for('akun_tabungan.akun_tabungan') }}">Akun Tabungan</a>

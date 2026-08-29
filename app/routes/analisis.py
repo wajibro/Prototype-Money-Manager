@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, request, url_for, session
 from functools import wraps
 from app import supabase
-from datetime import date
+from datetime import date, datetime
 import io
 import base64
 import matplotlib
@@ -39,10 +39,38 @@ def grafik_ke_base64():
 @analisis_bp.route('/analisis')
 @login_required
 def analisis():
+    response = supabase.table('akun_tabungan').select('total').execute()
+    total_saldo = 0
+    if response.data:
+        for akun in response.data:
+            total_saldo += float(akun['total'])
+        total_saldo = f"Rp {total_saldo:,.2f}"
+    else:
+        total_saldo = "Belum ada akun tabungan yang terdaftar"
+
+    response = supabase.table('data_historis').select('total_perubahan').eq('jenis', 'Pengeluaran').execute()
+    total_pengeluaran = 0
+    if response.data:
+        for akun in response.data:
+            total_pengeluaran += float(akun['total_perubahan'])
+        total_pengeluaran = f"Rp {total_pengeluaran:,.2f}"
+    else:
+        total_pengeluaran = 0
+
+    response = supabase.table('data_historis').select('total_perubahan').eq('jenis', 'Pemasukan').execute()
+    total_pemasukan = 0
+    if response.data:
+        for akun in response.data:
+            total_pemasukan += float(akun['total_perubahan'])
+        total_pemasukan = f"Rp {total_pemasukan:,.2f}"
+    else:
+        total_pemasukan = 0
+
     response_all = supabase.table('data_historis').select('*').execute()
     data_all = response_all.data
+    
     data_sorted = sorted(data_all, key=lambda x: x['tanggal'])
-
+    
     akun_tren = {}
     for p in data_sorted:
         nama_akun = p['nama_akun']
@@ -50,17 +78,34 @@ def analisis():
             akun_tren[nama_akun] = {'tanggal': [], 'total': []}
         akun_tren[nama_akun]['tanggal'].append(p['tanggal'])
         akun_tren[nama_akun]['total'].append(p['total_akhir'])
-
+    
     plt.figure(figsize=(10, 5))
-
+    
     for nama_akun, tren in akun_tren.items():
-        gaya = GAYA_GARIS_AKUN.get(nama_akun, {'marker': 'o'})
-        plt.plot(tren['tanggal'], tren['total'], label=nama_akun, linewidth=2.5, **gaya)
-        plt.text(tren['tanggal'][-1], tren['total'][-1], f" Rp {tren['total'][-1]:,}", va='center', fontweight='bold', fontsize=9)
-
+        date_total_pairs = sorted(
+            [(datetime.strptime(d, '%Y-%m-%d'), t) for d, t in zip(tren['tanggal'], tren['total'])],
+            key=lambda x: x[0]
+        )
+        
+        if date_total_pairs:
+            sorted_dates, sorted_totals = zip(*date_total_pairs)
+            
+            gaya = GAYA_GARIS_AKUN.get(nama_akun, {'marker': 'o'})
+            plt.plot(sorted_dates, sorted_totals, label=nama_akun, linewidth=2.5, **gaya)
+            
+            # Add text label at the last point (newest date)
+            plt.text(sorted_dates[-1], sorted_totals[-1], f" Rp {sorted_totals[-1]:,}", 
+                    va='center', fontweight='bold', fontsize=9)
+    
     ax3 = plt.gca()
     ax3.yaxis.set_major_locator(ticker.MultipleLocator(1000000))
     ax3.yaxis.set_major_formatter(FORMATTER_RUPIAH)
+    
+    # Format x-axis to show dates properly
+    import matplotlib.dates as mdates
+    ax3.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+    ax3.xaxis.set_major_locator(mdates.DayLocator())
+    
     plt.title('Tren Saldo Akhir Berdasarkan Akun', fontsize=12, fontweight='bold', pad=15)
     plt.xlabel('Tanggal Transaksi', fontsize=10)
     plt.legend(title="Daftar Akun", loc='upper left', frameon=True, shadow=True)
@@ -195,4 +240,14 @@ def analisis():
     plt.tight_layout()
     chart_pie_pemasukan = grafik_ke_base64()
 
-    return render_template('analisis.html', chart_batang_pengeluaran=chart_batang_pengeluaran, chart_batang_pemasukan=chart_batang_pemasukan, chart_pie_pengeluaran=chart_pie_pengeluaran, chart_pie_pemasukan=chart_pie_pemasukan, chart_garis=chart_garis)
+    return render_template(
+        'analisis.html',
+        total_saldo             = total_saldo,
+        total_pengeluaran       = total_pengeluaran,
+        total_pemasukan         = total_pemasukan,
+        chart_batang_pengeluaran= chart_batang_pengeluaran,
+        chart_batang_pemasukan  = chart_batang_pemasukan,
+        chart_pie_pengeluaran   = chart_pie_pengeluaran,
+        chart_pie_pemasukan     = chart_pie_pemasukan,
+        chart_garis             = chart_garis
+    )

@@ -44,6 +44,7 @@ def histori():
     if response.data:
         for akun in response.data:
             total_pengeluaran += float(akun['total_perubahan'])
+        total_pengeluaran = f"Rp {total_pengeluaran:,.2f}"
     else:
         total_pengeluaran = 0
 
@@ -52,6 +53,7 @@ def histori():
     if response.data:
         for akun in response.data:
             total_pemasukan += float(akun['total_perubahan'])
+        total_pemasukan = f"Rp {total_pemasukan:,.2f}"
     else:
         total_pemasukan = 0
 
