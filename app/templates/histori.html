@@ -62,19 +62,33 @@
 {% endif %}
 <br>
 <h3>Histori Data</h3>
+{% for tanggal, pengeluaran, pemasukan, cash_flow, data_sehari in data_historis %}
 <table border="1" cellpadding="5" cellspacing="0">
     <thead>
+        <tr>
+            <td colspan="2">
+                Rp{{ cash_flow }}
+            </td>
+            <td>
+                Pengeluaran: Rp{{ pengeluaran }}
+            </td>
+            <td>
+                Pemasukan: Rp{{ pemasukan }}
+            </td>
+            <td>
+                {{ tanggal | format_tanggal }}
+            </td>
+        </tr>
         <tr>
             <th>Akun dan Kategori</th>
             <th>Jenis</th>
             <th>Sub Kategori</th>
             <th>Perubahan</th>
             <th>Total Akhir Akun</th>
-            <th>Tanggal</th>
         </tr>
     </thead>
     <tbody>
-        {% for p in data_historis %}
+        {% for p in data_sehari %}
         <tr>
             <td>
                 {{ p.kategori }} <br> {{ p.nama_akun }}
@@ -92,9 +106,6 @@
                 Rp {{ "{:,.2f}".format(p.total_akhir) }}
             </td>
             <td>
-                {{ p.tanggal | format_tanggal }}
-            </td>
-            <td>
                 {% if p.jenis == 'Pemasukan' or p.jenis == 'Pengeluaran' %}
                 <a href="/edit_histori/{{ p.id }}">Edit</a>
                 {% endif %}
@@ -106,4 +117,6 @@
         {% endfor %}
     </tbody>
 </table>
+<br>
+{% endfor %}
 {% endblock %}

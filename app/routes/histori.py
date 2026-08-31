@@ -79,11 +79,36 @@ def histori():
     else:
         total_pemasukan = 0
 
+    data = select_table(table='data_historis')
+    tanggal = sorted(list(set(p['tanggal'] for p in data)))
+    tanggal.sort(reverse=True)
+
+    data_sehari = []
+    pengeluaran_sehari = []
+    pemasukan_sehari = []
+    cash_flow_sehari = []
+    for p in tanggal:
+        per_tanggal = select_table(table='data_historis', eq_col='tanggal', eq_row=p, order_1='id', desc_1=True)
+        data_sehari.append(per_tanggal)
+
+        total_pemasukan_sehari = 0
+        total_pengeluaran_sehari = 0
+
+        for p in per_tanggal:
+            if p['jenis'] == 'Pemasukan':
+                total_pemasukan_sehari += p['total_perubahan']
+            elif p['jenis'] == 'Pengeluaran':
+                total_pengeluaran_sehari += p['total_perubahan']
+
+        cash_flow = total_pemasukan_sehari + total_pengeluaran_sehari
+        cash_flow_sehari.append(f"{cash_flow:,.2f}")
+        pengeluaran_sehari.append(f"{total_pengeluaran_sehari:,.2f}")
+        pemasukan_sehari.append(f"{total_pemasukan_sehari:,.2f}")
+
+    data_historis = zip(tanggal, pengeluaran_sehari, pemasukan_sehari, cash_flow_sehari, data_sehari)
+
     akun_tabungan = select_table(table='akun_tabungan', select='nama_akun')
-
     kategori = select_table('kategori', select='kategori')
-
-    data_historis = select_table(table='data_historis', order_1='tanggal', desc_1=True, order_2='id', desc_2=True)
 
     return render_template(
         'histori.html',
