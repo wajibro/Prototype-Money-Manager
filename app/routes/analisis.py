@@ -36,38 +36,59 @@ def grafik_ke_base64():
     plt.close()
     return f"data:image/png;base64,{plot_url}"
 
+def select_table(table, select="*", eq_col=False, eq_row=False, neq_col=False, neq_row=False, order_1=False, desc_1=False, order_2=False, desc_2=False):
+    query = supabase.table(table).select(select)
+    if eq_col:
+        query.eq(eq_col, eq_row)
+    if neq_col:
+        query.neq(neq_col, neq_row)
+    if order_1:
+        query.order(order_1, desc=desc_1)
+    if order_2:
+        query.order(order_2, desc=desc_2)
+    response = query.execute()
+    return response.data
+
+def insert_table(table, data):
+    supabase.table(table).insert(data).execute()
+
+def update_table(table, data, eq_col, eq_row):
+    supabase.table(table).update(data).eq(eq_col, eq_row).execute()
+
+def delete_table(table, eq_col, eq_row):
+    supabase.table(table).delete().eq(eq_col, eq_row).execute()
+
 @analisis_bp.route('/analisis')
 @login_required
 def analisis():
-    response = supabase.table('akun_tabungan').select('total').execute()
+    total_saldo_query = select_table(table='akun_tabungan', select='total')
     total_saldo = 0
-    if response.data:
-        for akun in response.data:
+    if total_saldo_query:
+        for akun in total_saldo_query:
             total_saldo += float(akun['total'])
         total_saldo = f"Rp {total_saldo:,.2f}"
     else:
         total_saldo = "Belum ada akun tabungan yang terdaftar"
 
-    response = supabase.table('data_historis').select('total_perubahan').eq('jenis', 'Pengeluaran').execute()
+    total_pengeluaran_query = select_table(table='data_historis', select='total_perubahan', eq_col='jenis', eq_row='Pengeluaran')
     total_pengeluaran = 0
-    if response.data:
-        for akun in response.data:
+    if total_pengeluaran_query:
+        for akun in total_pengeluaran_query:
             total_pengeluaran += float(akun['total_perubahan'])
         total_pengeluaran = f"Rp {total_pengeluaran:,.2f}"
     else:
         total_pengeluaran = 0
 
-    response = supabase.table('data_historis').select('total_perubahan').eq('jenis', 'Pemasukan').execute()
+    total_pemasukan_query = select_table(table='data_historis', select='total_perubahan', eq_col='jenis', eq_row='Pemasukan')
     total_pemasukan = 0
-    if response.data:
-        for akun in response.data:
+    if total_pemasukan_query:
+        for akun in total_pemasukan_query:
             total_pemasukan += float(akun['total_perubahan'])
         total_pemasukan = f"Rp {total_pemasukan:,.2f}"
     else:
         total_pemasukan = 0
-
-    response_all = supabase.table('data_historis').select('*').execute()
-    data_all = response_all.data
+    
+    data_all = select_table(table='data_historis')
     
     data_sorted = sorted(data_all, key=lambda x: x['tanggal'])
     
@@ -114,8 +135,7 @@ def analisis():
     plt.tight_layout()
     chart_garis = grafik_ke_base64()
 
-    response = supabase.table('data_historis').select('*').eq('jenis', 'Pengeluaran').execute()
-    data = response.data
+    data = select_table(table='data_historis', eq_col='jenis', eq_row='Pengeluaran')
 
     daftar_kategori_masuk = sorted(list(set(p['kategori'] for p in data)))
     
@@ -177,8 +197,7 @@ def analisis():
     plt.tight_layout()
     chart_pie_pengeluaran = grafik_ke_base64()
 
-    response = supabase.table('data_historis').select('*').eq('jenis', 'Pemasukan').execute()
-    data = response.data
+    data = select_table(table='data_historis', eq_col='jenis', eq_row='Pemasukan')
 
     daftar_kategori = set()
     daftar_kategori_masuk = sorted(list(set(p['kategori'] for p in data)))

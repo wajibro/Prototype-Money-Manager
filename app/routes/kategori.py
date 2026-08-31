@@ -13,6 +13,27 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def select_table(table, select="*", eq_col=False, eq_row=False, neq_col=False, neq_row=False, order_1=False, desc_1=False, order_2=False, desc_2=False):
+    query = supabase.table(table).select(select)
+    if eq_col:
+        query.eq(eq_col, eq_row)
+    if neq_col:
+        query.neq(neq_col, neq_row)
+    if order_1:
+        query.order(order_1, desc=desc_1)
+    if order_2:
+        query.order(order_2, desc=desc_2)
+    response = query.execute()
+    return response.data
+
+def insert_table(table, data):
+    supabase.table(table).insert(data).execute()
+
+def update_table(table, data, eq_col, eq_row):
+    supabase.table(table).update(data).eq(eq_col, eq_row).execute()
+
+def delete_table(table, eq_col, eq_row):
+    supabase.table(table).delete().eq(eq_col, eq_row).execute()
 
 @kategori_bp.route('/kategori', methods=['GET'])
 @login_required
@@ -20,38 +41,36 @@ def kategori():
     tab_aktif = request.args.get('tab', 'pengeluaran')
     message = request.args.get('message', '')
 
-    response = supabase.table('akun_tabungan').select('total').execute()
+    total_saldo_query = select_table(table='akun_tabungan', select='total')
     total_saldo = 0
-    if response.data:
-        for akun in response.data:
+    if total_saldo_query:
+        for akun in total_saldo_query:
             total_saldo += float(akun['total'])
         total_saldo = f"Rp {total_saldo:,.2f}"
     else:
         total_saldo = "Belum ada akun tabungan yang terdaftar"
 
-    response = supabase.table('data_historis').select('total_perubahan').eq('jenis', 'Pengeluaran').execute()
+    total_pengeluaran_query = select_table(table='data_historis', select='total_perubahan', eq_col='jenis', eq_row='Pengeluaran')
     total_pengeluaran = 0
-    if response.data:
-        for akun in response.data:
+    if total_pengeluaran_query:
+        for akun in total_pengeluaran_query:
             total_pengeluaran += float(akun['total_perubahan'])
         total_pengeluaran = f"Rp {total_pengeluaran:,.2f}"
     else:
         total_pengeluaran = 0
 
-    response = supabase.table('data_historis').select('total_perubahan').eq('jenis', 'Pemasukan').execute()
+    total_pemasukan_query = select_table(table='data_historis', select='total_perubahan', eq_col='jenis', eq_row='Pemasukan')
     total_pemasukan = 0
-    if response.data:
-        for akun in response.data:
+    if total_pemasukan_query:
+        for akun in total_pemasukan_query:
             total_pemasukan += float(akun['total_perubahan'])
         total_pemasukan = f"Rp {total_pemasukan:,.2f}"
     else:
         total_pemasukan = 0
 
-    response = supabase.table('kategori').select('*').order('id', desc=False).execute()
-    kategori = response.data
+    kategori = select_table(table='kategori', order_1='id', desc_1=False)
 
-    response = supabase.table('akun_tabungan').select('*').execute()
-    akun_tabungan = response.data
+    akun_tabungan = select_table(table='akun_tabungan')
 
     return render_template(
         'kategori.html',
@@ -73,8 +92,9 @@ def simpan_pengeluaran():
     input_sub_kategori            = request.form.get('input_sub_kategori')
 
     total_perubahan = float(input_total_perubahan)
-    response = supabase.table('akun_tabungan').select('total').eq('nama_akun', input_akun_tabungan).execute()
-    total_tabungan = float(response.data[0]['total'])
+    total_tabungan = float(
+        select_table(table='akun_tabungann', select='total', eq_col='nama_akun', eq_row=input_akun_tabungan)[0]['total']
+    )
 
     total_akhir = total_tabungan - total_perubahan
 
@@ -82,20 +102,23 @@ def simpan_pengeluaran():
         if input_sub_kategori == '':
             input_sub_kategori = "-"
 
-        supabase.table('data_historis')\
-        .insert({
-            "tanggal"           : input_tanggal,
-            "nama_akun"         : input_akun_tabungan,
-            "jenis"             : "Pengeluaran",
-            "kategori"          : input_kategori,
-            "sub_kategori"      : input_sub_kategori,
-            "total_perubahan"   : -total_perubahan,
-            "total_akhir"       : total_akhir
-        }).execute()
-        supabase.table('akun_tabungan')\
-        .update({
-            "total": total_akhir
-        }).eq('nama_akun', input_akun_tabungan).execute()
+        insert_table(
+            table='data_historis',
+            data={
+                "tanggal"           : input_tanggal,
+                "nama_akun"         : input_akun_tabungan,
+                "jenis"             : "Pengeluaran",
+                "kategori"          : input_kategori,
+                "sub_kategori"      : input_sub_kategori,
+                "total_perubahan"   : -total_perubahan,
+                "total_akhir"       : total_akhir
+            }
+        )
+        update_table(
+            table='akun_tabungan',
+            data={'total': total_akhir},
+            eq_col='nama_akun', eq_row=input_akun_tabungan
+        )
 
         return redirect(url_for('kategori.kategori', tab='pengeluaran'))
 
@@ -108,9 +131,12 @@ def simpan_pemasukan():
     input_total_perubahan         = request.form.get('input_total_perubahan')
     input_sub_kategori            = request.form.get('input_sub_kategori')
 
+    sub_kategori = input_sub_kategori.capitalize()
+
     total_perubahan = float(input_total_perubahan)
-    response = supabase.table('akun_tabungan').select('total').eq('nama_akun', input_akun_tabungan).execute()
-    total_tabungan = float(response.data[0]['total'])
+    total_tabungan = float(
+        select_table(table='akun_tabungan', select='total', eq_col='nama_akun', eq_row=input_akun_tabungan)[0]['total']
+    )
 
     total_akhir = total_tabungan + total_perubahan
 
@@ -118,20 +144,23 @@ def simpan_pemasukan():
         if input_sub_kategori == '':
             input_sub_kategori = '-'
 
-        supabase.table('data_historis')\
-        .insert({
-            "tanggal"           : input_tanggal,
-            "nama_akun"         : input_akun_tabungan,
-            "jenis"             : "Pemasukan",
-            "kategori"          : input_kategori,
-            "sub_kategori"      : input_sub_kategori,
-            "total_perubahan"   : total_perubahan,
-            "total_akhir"       : total_akhir
-        }).execute()
-        supabase.table('akun_tabungan')\
-        .update({
-            "total": total_akhir
-        }).eq('nama_akun', input_akun_tabungan).execute()
+        insert_table(
+            table='data_historis',
+            data={
+                "tanggal"           : input_tanggal,
+                "nama_akun"         : input_akun_tabungan,
+                "jenis"             : "Pemasukan",
+                "kategori"          : input_kategori,
+                "sub_kategori"      : sub_kategori,
+                "total_perubahan"   : total_perubahan,
+                "total_akhir"       : total_akhir
+            }
+        )
+        update_table(
+            table='akun_tabungan',
+            data={'total': total_akhir},
+            eq_col='nama_akun', eq_row=input_akun_tabungan
+        )
 
     return redirect(url_for('kategori.kategori', tab='pemasukan'))
 
@@ -139,20 +168,21 @@ def simpan_pemasukan():
 @login_required
 def tambah_kategori_pengeluaran():
     input_kategori_baru = request.form.get('input_kategori_pengeluaran_baru')
-
     kategori_baru = input_kategori_baru.capitalize()
 
-    response = supabase.table('kategori').select('*').eq('kategori', kategori_baru).execute()
+    data_query = select_table(table='kategori', eq_col='kategori', eq_row=kategori_baru)
 
-    if response.data and len(response.data) > 0:
+    if data_query and len(data_query) > 0:
         return redirect(url_for('kategori.kategori', tab="tambah_kategori_pengeluaran", message="Kategori yang sama sudah ada, silahkan buat yang baru"))
 
     if input_kategori_baru:
-        supabase.table('kategori')\
-            .insert({
+        insert_table(
+            table='kategori',
+            data={
                 "kategori"  : kategori_baru,
                 "jenis"     : "Pengeluaran"
-            }).execute()
+            }
+        )
         return redirect(url_for('kategori.kategori', tab='pengeluaran'))
 
 @kategori_bp.route('/tambah_kategori_pemasukan', methods=['GET', 'POST'])
@@ -162,15 +192,18 @@ def tambah_kategori_pemasukan():
 
     kategori_baru = input_kategori_baru.capitalize()
 
-    response = supabase.table('kategori').select('*').eq('kategori', kategori_baru).execute()
+    data_query = select_table(table='kategori', eq_col='kategori', eq_row=kategori_baru)
 
-    if response.data and len(response.data) > 0:
+    if data_query and len(data_query) > 0:
         return redirect(url_for('kategori.kategori', tab="tambah_kategori_pengeluaran", message="Kategori yang sama sudah ada, silahkan buat yang baru"))
 
     if input_kategori_baru:
-        supabase.table('kategori')\
-            .insert({
+        insert_table(
+            table='kategori',
+            data={
                 "kategori"  : kategori_baru,
                 "jenis"     : "Pemasukan"
-            }).execute()
+            }
+        )
+
         return redirect(url_for('kategori.kategori', tab='pemasukan'))

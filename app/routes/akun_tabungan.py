@@ -13,31 +13,53 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def select_table(table, select="*", eq_col=False, eq_row=False, neq_col=False, neq_row=False, order_1=False, desc_1=False, order_2=False, desc_2=False):
+    query = supabase.table(table).select(select)
+    if eq_col:
+        query.eq(eq_col, eq_row)
+    if neq_col:
+        query.neq(neq_col, neq_row)
+    if order_1:
+        query.order(order_1, desc=desc_1)
+    if order_2:
+        query.order(order_2, desc=desc_2)
+    response = query.execute()
+    return response.data
+
+def insert_table(table, data):
+    supabase.table(table).insert(data).execute()
+
+def update_table(table, data, eq_col, eq_row):
+    supabase.table(table).update(data).eq(eq_col, eq_row).execute()
+
+def delete_table(table, eq_col, eq_row):
+    supabase.table(table).delete().eq(eq_col, eq_row).execute()
+
 @akun_tabungan_bp.route('/daftar_akun_tabungan', methods=['GET'])
 @login_required
 def akun_tabungan():
-    response = supabase.table('akun_tabungan').select('total').execute()
+    total_saldo_query = select_table(table='akun_tabungan', select='total')
     total_saldo = 0
-    if response.data:
-        for akun in response.data:
+    if total_saldo_query:
+        for akun in total_saldo_query:
             total_saldo += float(akun['total'])
         total_saldo = f"Rp {total_saldo:,.2f}"
     else:
         total_saldo = "Belum ada akun tabungan yang terdaftar"
 
-    response = supabase.table('data_historis').select('total_perubahan').eq('jenis', 'Pengeluaran').execute()
+    total_pengeluaran_query = select_table(table='data_historis', select='total_perubahan', eq_col='jenis', eq_row='Pengeluaran')
     total_pengeluaran = 0
-    if response.data:
-        for akun in response.data:
+    if total_pengeluaran_query:
+        for akun in total_pengeluaran_query:
             total_pengeluaran += float(akun['total_perubahan'])
         total_pengeluaran = f"Rp {total_pengeluaran:,.2f}"
     else:
         total_pengeluaran = 0
 
-    response = supabase.table('data_historis').select('total_perubahan').eq('jenis', 'Pemasukan').execute()
+    total_pemasukan_query = select_table(table='data_historis', select='total_perubahan', eq_col='jenis', eq_row='Pemasukan')
     total_pemasukan = 0
-    if response.data:
-        for akun in response.data:
+    if total_pemasukan_query:
+        for akun in total_pemasukan_query:
             total_pemasukan += float(akun['total_perubahan'])
         total_pemasukan = f"Rp {total_pemasukan:,.2f}"
     else:
@@ -49,19 +71,18 @@ def akun_tabungan():
     edit_akun = None
     edit_akun_id = request.args.get('edit_akun_id')
     if edit_akun_id:
-        response = supabase.table('akun_tabungan').select('*').eq('id', edit_akun_id).execute()
-        if response.data:
-            edit_akun = response.data[0]
+        edit_akun_query = select_table(table='akun_tabungan', eq_col='id', eq_row=edit_akun_id)
+        if edit_akun_query:
+            edit_akun = edit_akun_query[0]
 
     transfer_akun = None
     transfer_akun_id = request.args.get('transfer_akun_id')
     if transfer_akun_id:
-        response = supabase.table('akun_tabungan').select('*').eq('id', transfer_akun_id).execute()
-        if response.data:
-            transfer_akun = response.data[0]
+        transfer_akun_query = select_table(table='akun_tabungan', eq_col='id', eq_row=transfer_akun_id)
+        if transfer_akun_query:
+            transfer_akun = transfer_akun_query[0]
 
-    response = supabase.table('akun_tabungan').select('*').order('nama_akun', desc=False).execute()
-    data_akun_tabungan = response.data
+    data_akun_tabungan = select_table(table = 'akun_tabungan', order_1='nama_akun', desc_1=False)
 
     return render_template(
         'akun_tabungan.html',
@@ -84,17 +105,17 @@ def tambah_akun():
     nama_akun = input_nama_akun.capitalize()
     total = float(input_total)
 
-    response = supabase.table('akun_tabungan').select('*').eq('nama_akun', nama_akun).execute()
+    list_akun_query = select_table(table='akun_tabungan', eq_col='nama_akun', eq_row=nama_akun)
 
-    if response.data and len(response.data) > 0:
+    if list_akun_query and len(list_akun_query) > 0:
         return redirect(url_for('akun_tabungan.akun_tabungan', tab="tambah_akun", message="Akun yang sama sudah ada, silahkan buat yang baru"))
 
     if input_nama_akun and input_total:
-        supabase.table('akun_tabungan')\
-            .insert({
-                "nama_akun": nama_akun,
-                "total": total
-            }).execute()
+        data_akun_baru = {
+            "nama_akun": nama_akun,
+            "total": total
+        }
+        insert_table(table='akun_tabungan', data=data_akun_baru)
         return redirect(url_for('akun_tabungan.akun_tabungan', tab='', message=''))        
 
 @akun_tabungan_bp.route('/edit_akun/<id>', methods=['GET', 'POST'])
@@ -108,17 +129,20 @@ def update(id):
     input_nama_akun_baru = request.form.get('input_nama_akun_baru')
     input_total_akun_baru = request.form.get('input_total_akun_baru')
 
-    response = supabase.table('akun_tabungan').select('*').eq('nama_akun', input_nama_akun_baru).neq('id', id).execute()
+    nama_akun_query = select_table(table='akun_tabungan', eq_col='nama_akun', eq_row=input_nama_akun_baru, neq_col='id', neq_row=id)
 
-    if response.data:
+    if nama_akun_query:
         return redirect(url_for('akun_tabungan.akun_tabungan', edit_akun=id, tab='edit_akun', message='Sudah ada nama akun tabungan yang sama, gunakan nama lain'))
-    
-    supabase.table('akun_tabungan')\
-        .update({
+
+    update_table(
+        table='akun_tabungan',
+        data={
             "nama_akun": input_nama_akun_baru,
             "total": input_total_akun_baru
-        }).eq('id', id).execute()
-    
+        },
+        eq_col='id', eq_row=id
+    )
+
     session.pop('edit_akun_data', None)
     session.pop('edit_akun_id', None)
 
@@ -136,25 +160,30 @@ def transfer(id):
     input_total_transfer = request.form.get('input_total_transfer')
     total_transfer = float(input_total_transfer)
 
-    response = supabase.table('akun_tabungan').select('*').eq('id', id).execute()
-    data_sumber = response.data[0]
+    data_sumber = select_table(table='akun_tabungan', eq_col='id', eq_row=id)[0]
     total_sumber = float(data_sumber['total'])
     sumber_akhir = total_sumber - total_transfer
 
-    response = supabase.table('akun_tabungan').select('*').eq('nama_akun', target_transfer).execute()
-    data_target = response.data[0]
+    data_target = select_table(table='akun_tabungan', eq_col='nama_akun', eq_row=target_transfer)[0]
     total_target = float(data_target['total'])
     target_akhir = total_target + total_transfer
 
-    supabase.table('akun_tabungan')\
-        .update({
+    update_table(
+        table='akun_tabungan',
+        data={
             'nama_akun': data_sumber['nama_akun'],
             'total': sumber_akhir
-        }).eq('id', id).execute()
-    supabase.table('akun_tabungan')\
-        .update({
+        },
+        eq_col='id', eq_row=id
+    )
+
+    update_table(
+        table='akun_tabungan',
+        data={
             'total': target_akhir
-        }).eq('nama_akun', target_transfer).execute()
+        },
+        eq_col='nama_akun', eq_row=target_transfer
+    )
 
     session.pop('transfer_akun_data', None)
     session.pop('transfer_akun_id', None)
@@ -164,11 +193,10 @@ def transfer(id):
 @akun_tabungan_bp.route('/hapus_akun/<id>', methods=['POST'])
 @login_required
 def delete(id):
-    response = supabase.table('akun_tabungan').select('*').eq('id', id).execute()
-    data = response.data[0]
+    data = select_table(table='akun_tabungan', eq_col='id', eq_row=id)[0]
     nama_akun = data['nama_akun']
 
-    supabase.table('data_historis').delete().eq('nama_akun', nama_akun).execute()
-    supabase.table('akun_tabungan').delete().eq('id', id).execute()
+    delete_table(table='data_historis', eq_col='nama_akun', eq_row=nama_akun)
+    delete_table(table='akun_tabungan', eq_col='id', eq_row=id)
 
     return redirect(url_for('akun_tabungan.akun_tabungan', tab='', message=''))

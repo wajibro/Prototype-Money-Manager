@@ -13,6 +13,28 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def select_table(table, select="*", eq_col=False, eq_row=False, neq_col=False, neq_row=False, order_1=False, desc_1=False, order_2=False, desc_2=False):
+    query = supabase.table(table).select(select)
+    if eq_col:
+        query.eq(eq_col, eq_row)
+    if neq_col:
+        query.neq(neq_col, neq_row)
+    if order_1:
+        query.order(order_1, desc=desc_1)
+    if order_2:
+        query.order(order_2, desc=desc_2)
+    response = query.execute()
+    return response.data
+
+def insert_table(table, data):
+    supabase.table(table).insert(data).execute()
+
+def update_table(table, data, eq_col, eq_row):
+    supabase.table(table).update(data).eq(eq_col, eq_row).execute()
+
+def delete_table(table, eq_col, eq_row):
+    supabase.table(table).delete().eq(eq_col, eq_row).execute()
+
 @histori_bp.app_template_filter('format_tanggal')
 def format_tgl_en_filter(date_str):
     if not date_str:
@@ -26,45 +48,42 @@ def histori():
     edit_histori = None
     edit_histori_id = request.args.get('edit_histori_id')
     if edit_histori_id:
-        response = supabase.table('data_historis').select('*').eq('id', edit_histori_id).execute()
-        if response.data:
-            edit_histori = response.data[0]
+        edit_data = select_table(table='data_historis', eq_col='id', eq_row=edit_histori_id)
+        if edit_data:
+            edit_histori = edit_data[0]
 
-    response = supabase.table('akun_tabungan').select('total').execute()
+    total_saldo_query = select_table(table='akun_tabungan', select='total')
     total_saldo = 0
-    if response.data:
-        for akun in response.data:
+    if total_saldo_query:
+        for akun in total_saldo_query:
             total_saldo += float(akun['total'])
         total_saldo = f"Rp {total_saldo:,.2f}"
     else:
         total_saldo = "Belum ada akun tabungan yang terdaftar"
 
-    response = supabase.table('data_historis').select('total_perubahan').eq('jenis', 'Pengeluaran').execute()
+    total_pengeluaran_query = select_table(table='data_historis', select='total_perubahan', eq_col='jenis', eq_row='Pengeluaran')
     total_pengeluaran = 0
-    if response.data:
-        for akun in response.data:
+    if total_pengeluaran_query:
+        for akun in total_pengeluaran_query:
             total_pengeluaran += float(akun['total_perubahan'])
         total_pengeluaran = f"Rp {total_pengeluaran:,.2f}"
     else:
         total_pengeluaran = 0
 
-    response = supabase.table('data_historis').select('total_perubahan').eq('jenis', 'Pemasukan').execute()
+    total_pemasukan_query = select_table(table='data_historis', select='total_perubahan', eq_col='jenis', eq_row='Pemasukan')
     total_pemasukan = 0
-    if response.data:
-        for akun in response.data:
+    if total_pemasukan_query:
+        for akun in total_pemasukan_query:
             total_pemasukan += float(akun['total_perubahan'])
         total_pemasukan = f"Rp {total_pemasukan:,.2f}"
     else:
         total_pemasukan = 0
 
-    response = supabase.table('akun_tabungan').select('nama_akun').execute().data
-    akun_tabungan = response
+    akun_tabungan = select_table(table='akun_tabungan', select='nama_akun')
 
-    response = supabase.table('kategori').select('kategori').execute().data
-    kategori = response
+    kategori = select_table('kategori', select='kategori')
 
-    response = supabase.table('data_historis').select('*').order('tanggal', desc=True).order('id', desc=True).execute()
-    data_historis = response.data
+    data_historis = select_table(table='data_historis', order_1='tanggal', desc_1=True, order_2='id', desc_2=True)
 
     return render_template(
         'histori.html',
@@ -92,8 +111,7 @@ def update(id):
     input_tanggal_baru      = request.form.get('input_tanggal_baru')
     perubahan_baru = float(input_perubahan_baru)
 
-    response = supabase.table('data_historis').select('*').eq('id', id).execute()
-    data_lama = response.data[0]
+    data_lama = select_table(table='data_historis', eq_col='id', eq_row=id)[0]
     akun_lama = data_lama['nama_akun']
     perubahan_lama = float(data_lama['total_perubahan'])
     total_lama = float(data_lama['total_akhir'])
@@ -104,44 +122,55 @@ def update(id):
         else:
             total_akhir = total_lama
 
-        supabase.table('data_historis')\
-            .update({
+        update_table(
+            table='data_historis',
+            data={
                 'nama_akun': input_nama_akun_baru,
                 'kategori': input_kategori_baru,
                 'sub_kategori': input_sub_kategori_baru,
                 'total_perubahan': perubahan_baru,
                 'total_akhir': total_akhir,
                 'tanggal': input_tanggal_baru
-            }).eq('id', id).execute()
-        supabase.table('akun_tabungan')\
-            .update({
-                'total': total_akhir
-            }).eq('nama_akun', input_nama_akun_baru).execute()
+            },
+            eq_col='id', eq_row=id
+        )
+        update_table(
+            table='akun_tabungan',
+            data={'total': total_akhir},
+            eq_col='nama_akun', eq_row=input_nama_akun_baru
+        )
+
     else:
-        response = supabase.table('akun_tabungan').select('*').eq('nama_akun', input_nama_akun_baru).execute()
-        data_baru = response.data[0]
+        data_baru = select_table(table='akun_tabungan', eq_col='nama_akun', eq_row=input_nama_akun_baru)[0]
         total_akun_baru = data_baru['total']
 
         total_akhir_lama = total_lama - perubahan_lama
         total_akhir_baru = total_akun_baru + perubahan_baru
 
-        supabase.table('data_historis')\
-                .update({
-                    'nama_akun': input_nama_akun_baru,
-                    'kategori': input_kategori_baru,
-                    'sub_kategori': input_sub_kategori_baru,
-                    'total_perubahan': perubahan_baru,
-                    'total_akhir': total_akhir_baru,
-                    'tanggal': input_tanggal_baru
-                }).eq('id', id).execute()
-        supabase.table('akun_tabungan')\
-            .update({
-                'total': total_akhir_lama
-            }).eq('nama_akun', akun_lama).execute()
-        supabase.table('akun_tabungan')\
-            .update({
-                'total': total_akhir_baru
-            }).eq('nama_akun', input_nama_akun_baru).execute()
+        update_table(
+            table='data_historis',
+            data={
+                'nama_akun': input_nama_akun_baru,
+                'kategori': input_kategori_baru,
+                'sub_kategori': input_sub_kategori_baru,
+                'total_perubahan': perubahan_baru,
+                'total_akhir': total_akhir_baru,
+                'tanggal': input_tanggal_baru
+            },
+            eq_col='id', eq_row=id
+        )
+
+        update_table(
+            table='akun_tabungan',
+            data={'total': total_akhir_lama},
+            eq_col='nama_akun', eq_row=akun_lama
+        )
+
+        update_table(
+            table='akun_tabungan',
+            data={'total': total_akhir_baru},
+            eq_col='nama_akun', eq_row=input_nama_akun_baru
+        )
 
     session.pop('edit_histori_data', None)
     session.pop('edit_histori_id', None)
@@ -151,20 +180,19 @@ def update(id):
 @histori_bp.route('/hapus_histori/<id>', methods=['GET', 'POST'])
 @login_required
 def delete(id):
-    response = supabase.table('data_historis').select('*').eq('id', id).execute()
-    data_lama = response.data[0]
+    data_lama = select_table(table='data_historis', eq_col='id', eq_row=id)[0]
 
     akun = data_lama['nama_akun']
     total_lama = float(data_lama['total_perubahan'])
 
-    response = supabase.table('akun_tabungan').select('*').eq('nama_akun', akun).execute()
-    data_akun = response.data[0]
+    data_akun = select_table(table='akun_tabungan', eq_col='nama_akun', eq_row=akun)[0]
     total_awal = data_akun['total']
     total_akhir = total_awal - total_lama
 
-    supabase.table('akun_tabungan')\
-        .update({
-            "total": total_akhir
-        }).eq('nama_akun', akun).execute()
-    supabase.table('data_historis').delete().eq('id', id).execute()
+    update_table(
+        table='akun_tabungan',
+        data={"total": total_akhir},
+        eq_col='nama_akun', eq_row=akun
+    )
+    delete_table(table='data_historis', eq_col='id', eq_row=id)
     return redirect(url_for('histori.histori'))
