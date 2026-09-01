@@ -93,7 +93,7 @@ def simpan_pengeluaran():
 
     total_perubahan = float(input_total_perubahan)
     total_tabungan = float(
-        select_table(table='akun_tabungann', select='total', eq_col='nama_akun', eq_row=input_akun_tabungan)[0]['total']
+        select_table(table='akun_tabungan', select='total', eq_col='nama_akun', eq_row=input_akun_tabungan)[0]['total']
     )
 
     total_akhir = total_tabungan - total_perubahan
