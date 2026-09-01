@@ -1,7 +1,6 @@
 from flask import Blueprint, render_template, redirect, request, url_for, session
 from functools import wraps
 from app import supabase
-from datetime import date
 
 kategori_bp = Blueprint('kategori', __name__) 
 
@@ -195,7 +194,7 @@ def tambah_kategori_pemasukan():
     data_query = select_table(table='kategori', eq_col='kategori', eq_row=kategori_baru)
 
     if data_query and len(data_query) > 0:
-        return redirect(url_for('kategori.kategori', tab="tambah_kategori_pengeluaran", message="Kategori yang sama sudah ada, silahkan buat yang baru"))
+        return redirect(url_for('kategori.kategori', tab="tambah_kategori_pemasukan", message="Kategori yang sama sudah ada, silahkan buat yang baru"))
 
     if input_kategori_baru:
         insert_table(
