@@ -66,18 +66,19 @@
 <table border="1" cellpadding="5" cellspacing="0">
     <thead>
         <tr>
-            <td colspan="2">
-                Rp{{ cash_flow }}
-            </td>
-            <td>
-                Pengeluaran: Rp{{ pengeluaran }}
-            </td>
-            <td>
-                Pemasukan: Rp{{ pemasukan }}
-            </td>
-            <td>
+            <th>
                 {{ tanggal | format_tanggal }}
-            </td>
+            </th>
+            
+            <th style="color: red;">
+                Rp {{ pengeluaran }}
+            </th>
+            <th style="color: green;">
+                Rp {{ pemasukan }}
+            </th>
+            <th>
+                Rp{{ cash_flow }}
+            </th>
         </tr>
         <tr>
             <th>Akun dan Kategori</th>
