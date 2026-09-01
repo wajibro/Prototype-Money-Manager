@@ -112,7 +112,7 @@ def simpan_pengeluaran():
                 "nama_akun"         : input_akun_tabungan,
                 "jenis"             : "Pengeluaran",
                 "kategori"          : input_kategori,
-                "sub_kategori"      : input_sub_kategori,
+                "sub_kategori"      : input_sub_kategori.capitalize(),
                 "total_perubahan"   : -total_perubahan,
                 "total_akhir"       : total_akhir
             }
@@ -134,8 +134,6 @@ def simpan_pemasukan():
     input_total_perubahan         = request.form.get('input_total_perubahan')
     input_sub_kategori            = request.form.get('input_sub_kategori')
 
-    sub_kategori = input_sub_kategori.capitalize()
-
     total_perubahan = float(input_total_perubahan)
     total_tabungan = float(
         select_table(table='akun_tabungan', select='total', eq_col='nama_akun', eq_row=input_akun_tabungan)[0]['total']
@@ -154,7 +152,7 @@ def simpan_pemasukan():
                 "nama_akun"         : input_akun_tabungan,
                 "jenis"             : "Pemasukan",
                 "kategori"          : input_kategori,
-                "sub_kategori"      : sub_kategori,
+                "sub_kategori"      : input_sub_kategori.capitalize(),
                 "total_perubahan"   : total_perubahan,
                 "total_akhir"       : total_akhir
             }
