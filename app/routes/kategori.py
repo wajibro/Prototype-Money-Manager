@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, redirect, request, url_for, session
 from functools import wraps
 from app import supabase
+from datetime import datetime
 
 kategori_bp = Blueprint('kategori', __name__) 
 
@@ -49,20 +50,23 @@ def kategori():
     else:
         total_saldo = "Belum ada akun tabungan yang terdaftar"
 
-    total_pengeluaran_query = select_table(table='data_historis', select='total_perubahan', eq_col='jenis', eq_row='Pengeluaran')
+    bulan_ini = datetime.now().strftime("%Y-%m")
+    total_pengeluaran_query = select_table(table='data_historis', eq_col='jenis', eq_row='Pengeluaran')
     total_pengeluaran = 0
     if total_pengeluaran_query:
         for akun in total_pengeluaran_query:
-            total_pengeluaran += float(akun['total_perubahan'])
+            if bulan_ini in akun['tanggal']:
+                total_pengeluaran += float(akun['total_perubahan'])
         total_pengeluaran = f"Rp {total_pengeluaran:,.2f}"
     else:
         total_pengeluaran = 0
 
-    total_pemasukan_query = select_table(table='data_historis', select='total_perubahan', eq_col='jenis', eq_row='Pemasukan')
+    total_pemasukan_query = select_table(table='data_historis', eq_col='jenis', eq_row='Pemasukan')
     total_pemasukan = 0
     if total_pemasukan_query:
         for akun in total_pemasukan_query:
-            total_pemasukan += float(akun['total_perubahan'])
+            if bulan_ini in akun['tanggal']:
+                total_pemasukan += float(akun['total_perubahan'])
         total_pemasukan = f"Rp {total_pemasukan:,.2f}"
     else:
         total_pemasukan = 0

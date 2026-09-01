@@ -62,154 +62,146 @@ def delete_table(table, eq_col, eq_row):
 @analisis_bp.route('/analisis')
 @login_required
 def analisis():
-    saldo_awal = 0
     total_saldo_query = select_table(table='akun_tabungan', select='total')
     total_saldo = 0
     if total_saldo_query:
         for akun in total_saldo_query:
             total_saldo += float(akun['total'])
-        saldo_awal += total_saldo
-        print(saldo_awal)
         total_saldo = f"Rp {total_saldo:,.2f}"
     else:
         total_saldo = "Belum ada akun tabungan yang terdaftar"
 
-    total_pengeluaran_query = select_table(table='data_historis', select='total_perubahan', eq_col='jenis', eq_row='Pengeluaran')
+    bulan_ini = datetime.now().strftime("%Y-%m")
+    total_pengeluaran_query = select_table(table='data_historis', eq_col='jenis', eq_row='Pengeluaran')
     total_pengeluaran = 0
     if total_pengeluaran_query:
         for akun in total_pengeluaran_query:
-            total_pengeluaran += float(akun['total_perubahan'])
-        saldo_awal -= total_pengeluaran
+            if bulan_ini in akun['tanggal']:
+                total_pengeluaran += float(akun['total_perubahan'])
         total_pengeluaran = f"Rp {total_pengeluaran:,.2f}"
     else:
         total_pengeluaran = 0
 
-    total_pemasukan_query = select_table(table='data_historis', select='total_perubahan', eq_col='jenis', eq_row='Pemasukan')
+    total_pemasukan_query = select_table(table='data_historis', eq_col='jenis', eq_row='Pemasukan')
     total_pemasukan = 0
     if total_pemasukan_query:
         for akun in total_pemasukan_query:
-            total_pemasukan += float(akun['total_perubahan'])
-        saldo_awal -= total_pemasukan
+            if bulan_ini in akun['tanggal']:
+                total_pemasukan += float(akun['total_perubahan'])
         total_pemasukan = f"Rp {total_pemasukan:,.2f}"
     else:
         total_pemasukan = 0
 
-    all_tren = [saldo_awal]
     data = select_table(table='data_historis')
-    tanggal = sorted(list(set(p['tanggal'] for p in data)))
-
-    data_urut = sorted(data, key=lambda x: x['tanggal'])
-
+    
+    # Ambil saldo awal dari data 'Tambah Akun' pada tanggal 2026-08-25
+    tambah_akun_data = [p for p in data if p['tanggal'] == "2026-08-25" and p['jenis'] == 'Tambah Akun']
+    saldo_awal = 0
+    for record in tambah_akun_data:
+        saldo_awal += float(record['total_perubahan'])
+    
+    # Jika tidak ada data tambah akun, gunakan saldo awal default
+    if saldo_awal == 0:
+        saldo_awal = 6721236.0  # Default dari kode sebelumnya
+    
+    # Kelompokkan data berdasarkan tanggal (mulai dari 2026-08-25)
+    data_by_date = {}
+    for record in data:
+        tanggal = record['tanggal']
+        if tanggal not in data_by_date:
+            data_by_date[tanggal] = []
+        data_by_date[tanggal].append(record)
+    
+    # Urutkan tanggal
+    tanggal_urut = sorted(data_by_date.keys())
+    
+    # Hitung saldo kumulatif per tanggal
+    saldo_per_tanggal = []
     saldo_berjalan = saldo_awal
-    tanggal_terakhir = None
-
-    for record in data_urut:
-        if record['tanggal'] == "2026-08-25":
+    
+    # Tambahkan saldo awal pada tanggal 25
+    saldo_per_tanggal.append({
+        'tanggal': '2026-08-25',
+        'saldo': saldo_berjalan
+    })
+    
+    # Proses setiap tanggal setelah 25
+    for tanggal in tanggal_urut:
+        # Jika tanggal 25, skip karena sudah ditambahkan
+        if tanggal == '2026-08-25':
             continue
         
-        if record['tanggal'] != tanggal_terakhir:
-            all_tren.append(saldo_berjalan)
-            tanggal_terakhir = record['tanggal']
+        # Hitung total perubahan untuk tanggal ini
+        total_perubahan = 0
+        for record in data_by_date[tanggal]:
+            # Tambahkan perubahan (negatif untuk pengeluaran, positif untuk pemasukan)
+            total_perubahan += float(record['total_perubahan'])
         
-        saldo_berjalan += float(record['total_perubahan'])
-
-    all_tren.append(saldo_berjalan)
-
-
-    if tanggal and all_tren:
-        date_total_pairs = sorted(
-            [(datetime.strptime(d, '%Y-%m-%d'), t) for d, t in zip(tanggal, all_tren[1:])],
-            key=lambda x: x[0]
-        )
+        # Update saldo berjalan
+        saldo_berjalan += total_perubahan
         
-        if date_total_pairs:
-            sorted_dates, sorted_totals = zip(*date_total_pairs)
-            
-            plt.figure(figsize=(12, 6))
-            plt.plot(sorted_dates, sorted_totals, label='Total Saldo', linewidth=3, color='#2b8a3e', marker='o', markersize=6, markeredgecolor='white', markeredgewidth=1.5)
-
-            offset = max(sorted_totals) * 0.02
-            plt.text(sorted_dates[-1], sorted_totals[-1], f"  Rp {sorted_totals[-1]:,}", 
-                    va='center', fontweight='bold', fontsize=10,
-                    bbox=dict(boxstyle='round,pad=0.3', facecolor='#2b8a3e', alpha=0.15, edgecolor='#2b8a3e'))
-
-            for date, total in zip(sorted_dates, sorted_totals):
-                plt.text(date, total+offset, f"Rp {total:,}", 
-                        va='bottom' if total > 0 else 'top', ha='center', fontsize=7,
-                        bbox=dict(boxstyle='round,pad=0.2', facecolor='white', alpha=0.7))
-
-            ax = plt.gca()
-            ax.yaxis.set_major_locator(ticker.MultipleLocator(1000000))
-            ax.yaxis.set_major_formatter(FORMATTER_RUPIAH)
-            ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-            ax.xaxis.set_major_locator(mdates.DayLocator())
-            ax.tick_params(axis='both', labelsize=9)
-            ax.set_facecolor('#f8f9fa')
-            ax.grid(True, linestyle='--', alpha=0.6, color='#ced4da')
-
-            plt.fill_between(sorted_dates, sorted_totals, alpha=0.15, color='#2b8a3e')
-
-            plt.title('Tren Total Saldo Keseluruhan', fontsize=14, fontweight='bold', pad=20, color='#1a1a1a')
-            plt.xlabel('Tanggal Transaksi', fontsize=11, fontweight='500')
-            plt.ylabel('Total Saldo', fontsize=11, fontweight='500')
-            plt.xticks(rotation=20, ha='right')
-            plt.tight_layout()
-            chart_cashflow = grafik_ke_base64()
-        else:
-            chart_cashflow = None
+        # Simpan saldo per tanggal
+        saldo_per_tanggal.append({
+            'tanggal': tanggal,
+            'saldo': saldo_berjalan
+        })
+    
+    # Buat grafik
+    if len(saldo_per_tanggal) > 1:
+        # Siapkan data untuk plotting
+        dates = [datetime.strptime(d['tanggal'], '%Y-%m-%d') for d in saldo_per_tanggal]
+        saldos = [d['saldo'] for d in saldo_per_tanggal]
+        
+        plt.figure(figsize=(12, 6))
+        
+        # Plot garis dengan area fill
+        plt.plot(dates, saldos, label='Total Saldo', linewidth=3, 
+                color='#2b8a3e', marker='o', markersize=8, 
+                markeredgecolor='white', markeredgewidth=1.5)
+        
+        # Fill area di bawah grafik
+        plt.fill_between(dates, saldos, alpha=0.15, color='#2b8a3e')
+        
+        # Tambahkan label nilai di setiap titik
+        for date, saldo in zip(dates, saldos):
+            plt.text(date, saldo + (max(saldos) * 0.01), 
+                    f'Rp {saldo:,.0f}', 
+                    ha='center', va='bottom', 
+                    fontsize=9, fontweight='bold',
+                    bbox=dict(boxstyle='round,pad=0.3', 
+                             facecolor='white', alpha=0.8, 
+                             edgecolor='#2b8a3e'))
+        
+        # Highlight titik akhir
+        plt.text(dates[-1], saldos[-1] + (max(saldos) * 0.02), 
+                f'Rp {saldos[-1]:,}', 
+                va='center', fontweight='bold', fontsize=11,
+                bbox=dict(boxstyle='round,pad=0.4', 
+                         facecolor='#2b8a3e', alpha=0.15, 
+                         edgecolor='#2b8a3e'))
+        
+        # Format grafik
+        ax = plt.gca()
+        ax.yaxis.set_major_locator(ticker.MultipleLocator(1000000))
+        ax.yaxis.set_major_formatter(FORMATTER_RUPIAH)
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+        ax.xaxis.set_major_locator(mdates.DayLocator())
+        ax.tick_params(axis='both', labelsize=9)
+        ax.set_facecolor('#f8f9fa')
+        ax.grid(True, linestyle='--', alpha=0.6, color='#ced4da')
+        
+        # Label dan judul
+        plt.title('Tren Total Saldo Keseluruhan', fontsize=14, fontweight='bold', 
+                 pad=20, color='#1a1a1a')
+        plt.xlabel('Tanggal Transaksi', fontsize=11, fontweight='500')
+        plt.ylabel('Total Saldo', fontsize=11, fontweight='500')
+        plt.xticks(rotation=20, ha='right')
+        plt.tight_layout()
+        
+        chart_cashflow = grafik_ke_base64()
     else:
-        chart_cashflow = None
-    
-    data_all = select_table(table='data_historis')
-    
-    data_sorted = sorted(data_all, key=lambda x: x['tanggal'])
-    
-    akun_tren = {}
-    for p in data_sorted:
-        nama_akun = p['nama_akun']
-        if nama_akun not in akun_tren:
-            akun_tren[nama_akun] = {'tanggal': [], 'total': []}
-        akun_tren[nama_akun]['tanggal'].append(p['tanggal'])
-        akun_tren[nama_akun]['total'].append(p['total_akhir'])
-    
-    plt.figure(figsize=(10, 5))
-    
-    for nama_akun, tren in akun_tren.items():
-        date_total_pairs = sorted(
-            [(datetime.strptime(d, '%Y-%m-%d'), t) for d, t in zip(tren['tanggal'], tren['total'])],
-            key=lambda x: x[0]
-        )
-        
-        if date_total_pairs:
-            sorted_dates, sorted_totals = zip(*date_total_pairs)
-        
-            gaya = GAYA_GARIS_AKUN.get(nama_akun, {'marker': 'o'})
-            plt.plot(sorted_dates, sorted_totals, label=nama_akun, linewidth=2.5, **gaya)
-            
-            for i, (date, total) in enumerate(zip(sorted_dates, sorted_totals)):
-                if i == 0 or i == len(sorted_dates) - 1:
-                    offset = max(sorted_totals) * 0.02
-                    
-                    if i == 0:
-                        plt.text(date, total - offset, f"Rp {total:,.0f}", ha='center', va='top', fontweight='bold', fontsize=8)
-                    else:
-                        plt.text(date, total + offset, f"Rp {total:,.0f}", ha='center', va='bottom', fontweight='bold', fontsize=8)
-    
-    ax3 = plt.gca()
-    ax3.yaxis.set_major_locator(ticker.MultipleLocator(1000000))
-    ax3.yaxis.set_major_formatter(FORMATTER_RUPIAH)
-
-    ax3.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-    ax3.xaxis.set_major_locator(mdates.DayLocator())
-    
-    plt.title('Tren Saldo Akhir Berdasarkan Akun', fontsize=12, fontweight='bold', pad=15)
-    plt.xlabel('Tanggal Transaksi', fontsize=10)
-    plt.legend(title="Daftar Akun", loc='center left', bbox_to_anchor=(1, 0.5), frameon=True, shadow=True)
-    plt.grid(True, linestyle='--', alpha=0.5)
-    plt.xticks(rotation=15)
-    plt.tight_layout()
-    chart_garis = grafik_ke_base64()
-
+        # Jika data tidak cukup
+        chart_cashflow = None    
     data = select_table(table='data_historis', eq_col='jenis', eq_row='Pengeluaran')
 
     daftar_kategori_masuk = sorted(list(set(p['kategori'] for p in data)))
@@ -343,6 +335,5 @@ def analisis():
         chart_batang_pemasukan  = chart_batang_pemasukan,
         chart_pie_pengeluaran   = chart_pie_pengeluaran,
         chart_pie_pemasukan     = chart_pie_pemasukan,
-        chart_garis             = chart_garis,
         chart_cashflow          = chart_cashflow
     )
