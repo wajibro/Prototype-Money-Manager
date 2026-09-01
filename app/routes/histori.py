@@ -140,9 +140,10 @@ def update(id):
     perubahan_baru = float(input_perubahan_baru)
 
     data_lama = select_table(table='data_historis', eq_col='id', eq_row=id)[0]
+    akun_tabungan_query = select_table(table='akun_tabungan', eq_col='nama_akun', eq_row=input_nama_akun_baru.capitalize())[0]
     akun_lama = data_lama['nama_akun']
     perubahan_lama = float(data_lama['total_perubahan'])
-    total_lama = float(data_lama['total_akhir'])
+    total_lama = float(akun_tabungan_query['total'])
 
     if input_nama_akun_baru == akun_lama:
         if perubahan_baru != perubahan_lama:
@@ -157,7 +158,6 @@ def update(id):
                 'kategori': input_kategori_baru,
                 'sub_kategori': input_sub_kategori_baru,
                 'total_perubahan': perubahan_baru,
-                'total_akhir': total_akhir,
                 'tanggal': input_tanggal_baru
             },
             eq_col='id', eq_row=id
@@ -182,7 +182,6 @@ def update(id):
                 'kategori': input_kategori_baru,
                 'sub_kategori': input_sub_kategori_baru,
                 'total_perubahan': perubahan_baru,
-                'total_akhir': total_akhir_baru,
                 'tanggal': input_tanggal_baru
             },
             eq_col='id', eq_row=id

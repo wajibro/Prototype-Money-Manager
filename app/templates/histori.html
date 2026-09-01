@@ -66,18 +66,19 @@
 <table border="1" cellpadding="5" cellspacing="0">
     <thead>
         <tr>
-            <th>
+            <th rowspan="2">
                 {{ tanggal | format_tanggal }}
             </th>
-            
-            <th style="color: red;">
-                Rp {{ pengeluaran }}
-            </th>
-            <th style="color: green;">
+            <th colspan="2" style="color: green;">
                 Rp {{ pemasukan }}
             </th>
-            <th>
+            <th rowspan="2" colspan="2">
                 Rp{{ cash_flow }}
+            </th>
+        </tr>
+        <tr>
+            <th colspan="2" style="color: red;">
+                Rp {{ pengeluaran }}
             </th>
         </tr>
         <tr>
@@ -85,7 +86,7 @@
             <th>Jenis</th>
             <th>Sub Kategori</th>
             <th>Perubahan</th>
-            <th>Total Akhir Akun</th>
+            <th>Aksi</th>
         </tr>
     </thead>
     <tbody>
@@ -102,9 +103,6 @@
             </td>
             <td>
                 Rp {{ "{:,.2f}".format(p.total_perubahan) }}
-            </td>
-            <td>
-                Rp {{ "{:,.2f}".format(p.total_akhir) }}
             </td>
             <td>
                 {% if p.jenis == 'Pemasukan' or p.jenis == 'Pengeluaran' %}

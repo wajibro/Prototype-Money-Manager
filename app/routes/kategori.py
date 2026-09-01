@@ -113,8 +113,7 @@ def simpan_pengeluaran():
                 "jenis"             : "Pengeluaran",
                 "kategori"          : input_kategori,
                 "sub_kategori"      : input_sub_kategori.capitalize(),
-                "total_perubahan"   : -total_perubahan,
-                "total_akhir"       : total_akhir
+                "total_perubahan"   : -total_perubahan
             }
         )
         update_table(
@@ -153,8 +152,7 @@ def simpan_pemasukan():
                 "jenis"             : "Pemasukan",
                 "kategori"          : input_kategori,
                 "sub_kategori"      : input_sub_kategori.capitalize(),
-                "total_perubahan"   : total_perubahan,
-                "total_akhir"       : total_akhir
+                "total_perubahan"   : total_perubahan
             }
         )
         update_table(
